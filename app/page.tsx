@@ -8,49 +8,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      {/* ================= NAVBAR ================= */}
-      <nav className="border-b border-gray-100 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-6 lg:px-8">
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500 text-xl shadow-sm">
-              🍽️
-            </div>
-
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-gray-900">
-                Quick<span className="text-orange-500">Bite</span>
-              </h1>
-
-              <p className="hidden text-[10px] font-medium uppercase tracking-wider text-gray-400 sm:block">
-                Food made easy
-              </p>
-            </div>
-          </div>
-
-          {/* Navbar buttons */}
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => {
-                router.push("/login");
-              }}
-              className="rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:bg-orange-50 hover:text-orange-600 sm:px-5"
-            >
-              Login
-            </button>
-
-            <button
-              onClick={() => {
-                router.push("/register");
-              }}
-              className="rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 sm:px-5"
-            >
-              Register
-            </button>
-          </div>
-        </div>
-      </nav>
-
       {/* ================= HERO ================= */}
       <main className="relative overflow-hidden">
         {/* Decorative background */}
