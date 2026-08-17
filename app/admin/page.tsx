@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 interface Restaurant {
   _id: string;
   name: string;
+  image: string;
   description?: string;
   address?: string;
   phone?: string;

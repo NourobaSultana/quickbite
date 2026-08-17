@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
   FiUser,
   FiLogOut,
@@ -12,16 +12,20 @@ import {
   FiChevronDown,
   FiHome,
   FiGrid,
+  FiTag,
+  FiShoppingBag,
 } from "react-icons/fi";
 
 interface CurrentUser {
   name: string;
   username?: string;
   email?: string;
+  role?: "customer" | "restaurant" | "admin";
 }
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
 
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -29,27 +33,47 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
 
   const profileRef = useRef<HTMLDivElement>(null);
+  const justLoggedOut = useRef(false);
 
   // Check current login state via the real auth/me route.
+  // Re-runs on every route change (not just first mount) so that
+  // logging in or out — which always redirects to a new path — updates
+  // the navbar immediately, without needing a manual browser reload.
   useEffect(() => {
+    // If we just logged out locally, skip this one refetch — otherwise
+    // it can race against the logout request and briefly show the old
+    // user again before the cookie is fully cleared on the server.
+    if (justLoggedOut.current) {
+      justLoggedOut.current = false;
+      return;
+    }
+
     const fetchUser = async () => {
       try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+          cache: "no-store",
+        });
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.user) {
             setUser(data.user);
+          } else {
+            setUser(null);
           }
+        } else {
+          setUser(null);
         }
       } catch (err) {
         console.error("Failed to fetch current user:", err);
+        setUser(null);
       } finally {
         setLoadingUser(false);
       }
     };
 
     fetchUser();
-  }, []);
+  }, [pathname]);
 
   // Close profile dropdown when clicking outside
   useEffect(() => {
@@ -68,23 +92,35 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/logout", {
+      await fetch("/api/auth/logout", {
         method: "POST",
         credentials: "include",
       });
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      // Clear local state immediately and instruct the very next
+      // pathname-triggered effect to skip re-fetching, so the navbar
+      // shows "Home only" the instant the button is clicked — no
+      // reload, and no race with the redirect that follows.
+      justLoggedOut.current = true;
       setUser(null);
       setProfileOpen(false);
       router.push("/login");
-      router.refresh();
-    } catch (err) {
-      console.error("Logout failed:", err);
     }
   };
 
-  const navLinks = [
-    { label: "Home", href: "/", icon: FiHome },
-    { label: "Menu", href: "/foods", icon: FiGrid },
-  ];
+  // Everyone sees Home. Restaurant owners additionally see the
+  // create-restaurant / create-category / create-food links.
+  const navLinks =
+    user?.role === "restaurant"
+      ? [
+          { label: "Home", href: "/", icon: FiHome },
+          { label: "Create Restaurant", href: "/restaurant", icon: FiHome },
+          { label: "Create Food Type", href: "/category", icon: FiTag },
+          { label: "Create Food", href: "/foods", icon: FiShoppingBag },
+        ]
+      : [{ label: "Home", href: "/", icon: FiHome }];
 
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur">
@@ -95,14 +131,9 @@ export default function Navbar() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-sm font-bold text-white">
               QB
             </div>
-            <div className="flex flex-col leading-tight">
-              <span className="text-lg font-bold text-gray-900">
-                Quick<span className="text-orange-500">Bite</span>
-              </span>
-              <span className="text-[11px] font-medium tracking-wide text-gray-400">
-                Food Made Easy
-              </span>
-            </div>
+            <span className="text-lg font-bold text-gray-900">
+              Quick<span className="text-orange-500">Bite</span>
+            </span>
           </Link>
 
           {/* Desktop nav links */}

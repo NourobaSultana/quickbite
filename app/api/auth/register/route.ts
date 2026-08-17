@@ -4,13 +4,19 @@ import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/dbConnect";
 import User from "@/models/User";
 
+// Only these roles can be self-selected during public registration.
+// "admin" is intentionally excluded — admin accounts should be created
+// separately (e.g. by an existing admin, or seeded directly in the DB),
+// never through a public sign-up form.
+const ALLOWED_SELF_REGISTER_ROLES = ["customer", "restaurant"];
+
 export async function POST(request: NextRequest) {
   try {
     await dbConnect();
 
     const body = await request.json();
 
-    const { name, email, phone, password } = body;
+    const { name, email, phone, password, role } = body;
 
     // 1. Check required fields
     if (!name || !email || !phone || !password) {
@@ -34,7 +40,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 3. Check existing user
+    // 3. Validate role (defaults to "customer" if not provided)
+    const requestedRole = role || "customer";
+
+    if (!ALLOWED_SELF_REGISTER_ROLES.includes(requestedRole)) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Invalid role selected",
+        },
+        { status: 400 },
+      );
+    }
+
+    // 4. Check existing user
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }],
     });
@@ -49,18 +68,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 4. Hash password
+    // 5. Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 5. Create user
+    // 6. Create user
     const user = await User.create({
       name,
       email,
       phone,
       password: hashedPassword,
+      role: requestedRole,
     });
 
-    // 6. Return response
+    // 7. Return response
     return NextResponse.json(
       {
         success: true,
@@ -82,7 +102,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message: "All fields are required",
+        message: "Something went wrong. Please try again.",
       },
       { status: 500 },
     );

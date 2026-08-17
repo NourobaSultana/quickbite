@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type Role = "customer" | "restaurant";
+
 export default function RegisterPage() {
   const router = useRouter();
 
@@ -13,6 +15,7 @@ export default function RegisterPage() {
     password: "",
   });
 
+  const [role, setRole] = useState<Role>("customer");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +36,7 @@ export default function RegisterPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, role }),
       });
 
       const data = await response.json();
@@ -43,7 +46,7 @@ export default function RegisterPage() {
         return;
       }
 
-      alert("Registration successful!");
+      alert("Registration successful! Please log in to continue.");
 
       // Register successful হলে login page-এ যাবে
       router.push("/login");
@@ -164,6 +167,57 @@ export default function RegisterPage() {
 
               {/* ================= FORM ================= */}
               <form onSubmit={handleRegister} className="space-y-5">
+                {/* Role Selection */}
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-gray-700">
+                    I want to join as
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setRole("customer")}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-3.5 text-center transition ${
+                        role === "customer"
+                          ? "border-orange-500 bg-orange-50"
+                          : "border-gray-200 bg-white hover:border-gray-300"
+                      }`}
+                    >
+                      <span className="text-xl">🍔</span>
+                      <span
+                        className={`text-sm font-semibold ${
+                          role === "customer"
+                            ? "text-orange-600"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        Customer
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setRole("restaurant")}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-3.5 text-center transition ${
+                        role === "restaurant"
+                          ? "border-orange-500 bg-orange-50"
+                          : "border-gray-200 bg-white hover:border-gray-300"
+                      }`}
+                    >
+                      <span className="text-xl">🏪</span>
+                      <span
+                        className={`text-sm font-semibold ${
+                          role === "restaurant"
+                            ? "text-orange-600"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        Restaurant
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Name */}
                 <div>
                   <label
@@ -259,7 +313,9 @@ export default function RegisterPage() {
                   disabled={loading}
                   className="w-full rounded-xl bg-orange-500 px-4 py-3.5 font-semibold text-white shadow-md shadow-orange-100 transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {loading ? "Creating Account..." : "Create Account"}
+                  {loading
+                    ? "Creating Account..."
+                    : `Create ${role === "restaurant" ? "Restaurant" : "Customer"} Account`}
                 </button>
               </form>
 

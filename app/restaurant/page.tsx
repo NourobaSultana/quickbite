@@ -184,7 +184,7 @@ export default function page() {
                 <input
                   id="image"
                   name="image"
-                  type="url"
+                  type="text"
                   value={formData.image}
                   onChange={handleChange}
                   placeholder="https://example.com/restaurant.jpg"
