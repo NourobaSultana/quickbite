@@ -2,7 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import {
+  useRouter,
+  usePathname,
+  useParams,
+  useSearchParams,
+} from "next/navigation";
 import {
   FiUser,
   FiLogOut,
@@ -15,6 +20,8 @@ import {
   FiTag,
   FiShoppingBag,
 } from "react-icons/fi";
+import { FaUtensils } from "react-icons/fa";
+import { IoRestaurantOutline } from "react-icons/io5";
 
 interface CurrentUser {
   name: string;
@@ -24,8 +31,27 @@ interface CurrentUser {
 }
 
 export default function Navbar() {
+  const params = useParams();
+  const searchParams = useSearchParams();
+  // user customer
+  const restaurantId = params?.restaurantId as string | undefined;
+  // user restaurant
+  const restaurantsId =
+    (params?.restaurantId as string | undefined) ||
+    searchParams?.get("restaurantId") ||
+    undefined;
+  const categoryId = searchParams?.get("categoryId") || undefined;
   const router = useRouter();
   const pathname = usePathname();
+  // For customer user
+  const isOnRestaurantPage =
+    pathname?.startsWith("/customer/restaurants/") && !!restaurantId;
+
+  //For Restaurant user
+  const isOnOwnRestaurantFlow =
+    (pathname === "/category" || pathname === "/foods") && !!restaurantsId;
+  const isOnFoodsPage =
+    pathname === "/foods" && !!restaurantsId && !!categoryId;
 
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -35,10 +61,6 @@ export default function Navbar() {
   const profileRef = useRef<HTMLDivElement>(null);
   const justLoggedOut = useRef(false);
 
-  // Check current login state via the real auth/me route.
-  // Re-runs on every route change (not just first mount) so that
-  // logging in or out — which always redirects to a new path — updates
-  // the navbar immediately, without needing a manual browser reload.
   useEffect(() => {
     // If we just logged out locally, skip this one refetch — otherwise
     // it can race against the logout request and briefly show the old
@@ -112,15 +134,62 @@ export default function Navbar() {
 
   // Everyone sees Home. Restaurant owners additionally see the
   // create-restaurant / create-category / create-food links.
-  const navLinks =
-    user?.role === "restaurant"
-      ? [
+  const getNavLinks = () => {
+    switch (user?.role) {
+      case "restaurant": {
+        const links = [
           { label: "Home", href: "/", icon: FiHome },
-          { label: "Create Restaurant", href: "/restaurant", icon: FiHome },
-          { label: "Create Food Type", href: "/category", icon: FiTag },
-          { label: "Create Food", href: "/foods", icon: FiShoppingBag },
-        ]
-      : [{ label: "Home", href: "/", icon: FiHome }];
+          // { label: "Create Restaurant", href: "/restaurant", icon: FiHome },
+          // { label: "Create Food Type", href: "/category", icon: FiTag },
+          // { label: "Create Food", href: "/foods", icon: FiShoppingBag },
+        ];
+
+        // Dynamically append a link scoped to the restaurant they just created
+        if (isOnOwnRestaurantFlow) {
+          links.push({
+            label: "My Restaurant",
+            href: `/category?restaurantId=${restaurantsId}`,
+            icon: IoRestaurantOutline,
+          });
+        }
+
+        // Dynamically appears only when on /foods with both ids present
+        if (isOnFoodsPage) {
+          links.push({
+            label: "Food Category",
+            href: `/foods?restaurantId=${restaurantsId}&categoryId=${categoryId}`,
+            icon: FiTag,
+          });
+        }
+
+        return links;
+      }
+
+      case "admin":
+        return [{ label: "Home", href: "/", icon: FiHome }];
+
+      case "customer": {
+        const links = [
+          { label: "Home", href: "/", icon: FiHome },
+          { label: "Restaurant", href: "/customer", icon: FaUtensils },
+        ];
+
+        if (isOnRestaurantPage) {
+          links.push({
+            label: "Food Menu",
+            href: `/customer/restaurants/${restaurantId}`,
+            icon: IoRestaurantOutline,
+          });
+        }
+
+        return links;
+      }
+
+      default:
+        return [{ label: "Home", href: "/", icon: FiHome }];
+    }
+  };
+  const navLinks = getNavLinks();
 
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur">

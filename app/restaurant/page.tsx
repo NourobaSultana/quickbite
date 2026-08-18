@@ -267,6 +267,7 @@ export default function page() {
               </button>
 
               <button
+                // onClick={() => router.push(`/restaurant/${restaurant._id}`)}
                 type="submit"
                 disabled={loading}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-7 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
