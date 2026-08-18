@@ -170,7 +170,7 @@ export default function Navbar() {
 
       case "customer": {
         const links = [
-          { label: "Home", href: "/", icon: FiHome },
+          // { label: "Home", href: "/", icon: FiHome },
           { label: "Restaurant", href: "/customer", icon: FaUtensils },
         ];
 
@@ -196,7 +196,10 @@ export default function Navbar() {
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
+          <Link
+            href={user ? "/profile" : "/"}
+            className="flex items-center gap-2"
+          >
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-sm font-bold text-white">
               QB
             </div>
