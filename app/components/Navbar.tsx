@@ -138,7 +138,7 @@ export default function Navbar() {
     switch (user?.role) {
       case "restaurant": {
         const links = [
-          { label: "Home", href: "/", icon: FiHome },
+          // { label: "Home", href: "/", icon: FiHome },
           // { label: "Create Restaurant", href: "/restaurant", icon: FiHome },
           // { label: "Create Food Type", href: "/category", icon: FiTag },
           // { label: "Create Food", href: "/foods", icon: FiShoppingBag },
