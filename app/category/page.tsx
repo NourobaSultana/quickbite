@@ -64,8 +64,18 @@ export default function CategoryPage() {
     setError("");
     setMessage("");
 
-    if (!name.trim()) {
-      setError("Please enter an item name");
+    // Split on commas, trim whitespace, drop empties, dedupe.
+    const names = Array.from(
+      new Set(
+        name
+          .split(",")
+          .map((n) => n.trim())
+          .filter((n) => n.length > 0),
+      ),
+    );
+
+    if (names.length === 0) {
+      setError("Please enter at least one category name");
       return;
     }
 
@@ -79,31 +89,47 @@ export default function CategoryPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ name: name.trim(), restaurantId }),
-      });
+      const created: CategoryItem[] = [];
+      const failed: string[] = [];
 
-      const data = await res.json();
+      for (const n of names) {
+        try {
+          const res = await fetch("/api/categories", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ name: n, restaurantId }),
+          });
 
-      if (!data.success) {
-        setError(data.message || "Failed to add item");
-        return;
+          const data = await res.json();
+
+          if (data.success) {
+            created.push(data.category);
+          } else {
+            failed.push(n);
+          }
+        } catch {
+          failed.push(n);
+        }
       }
 
-      setMessage("Category created! Redirecting to add food items...");
-      setName("");
+      if (created.length > 0) {
+        setCategories((prev) => [...prev, ...created]);
+        setName("");
 
-      // Your /api/categories POST route returns the new category as `data.category`.
-      // Redirect to the foods page, passing along the same restaurantId
-      // and the newly created category's _id.
-      setTimeout(() => {
-        router.push(
-          `/foods?restaurantId=${restaurantId}&categoryId=${data.category._id}`,
-        );
-      }, 800);
+        if (failed.length > 0) {
+          setMessage(`Added ${created.length} categories.`);
+          setError(`Could not add: ${failed.join(", ")}`);
+        } else {
+          setMessage(
+            names.length === 1
+              ? "Category created!"
+              : `${created.length} categories created!`,
+          );
+        }
+      } else {
+        setError(`Failed to add: ${failed.join(", ")}`);
+      }
     } catch (err) {
       console.error("Create category error:", err);
       setError("Something went wrong. Please try again.");

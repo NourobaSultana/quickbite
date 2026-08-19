@@ -66,16 +66,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if owner already has restaurant
-    const existingRestaurant = await Restaurant.findOne({
+    const restaurantCount = await Restaurant.countDocuments({
       ownerId: user._id,
     });
 
-    if (existingRestaurant) {
+    const MAX_RESTAURANTS_PER_OWNER = 5;
+
+    if (restaurantCount >= MAX_RESTAURANTS_PER_OWNER) {
       return NextResponse.json(
         {
           success: false,
-          message: "You already have a restaurant",
+          message: `You can create a maximum of ${MAX_RESTAURANTS_PER_OWNER} restaurants`,
         },
         { status: 409 },
       );

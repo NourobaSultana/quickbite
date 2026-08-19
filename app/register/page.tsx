@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 type Role = "customer" | "restaurant";
 
@@ -44,17 +45,17 @@ export default function RegisterPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        alert(data.message || "Registration failed");
+        toast.error(data.message || "Registration failed");
         return;
       }
 
-      alert("Registration successful! Please log in to continue.");
+      toast.success("Registration successful! Please log in to continue.");
 
       // Register successful হলে login page-এ যাবে
       router.push("/login");
     } catch (error) {
       console.error("Registration error:", error);
-      alert("Something went wrong");
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }

@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import toast from "react-hot-toast";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,8 +38,10 @@ export default function LoginPage() {
 
       if (!response.ok) {
         setError(data.message);
+        toast.error(data.message || "Login failed");
         return;
       }
+      toast.success("Login successful!");
 
       await refreshUser();
 
@@ -46,6 +49,7 @@ export default function LoginPage() {
     } catch (error) {
       console.error(error);
       setError("Something went wrong");
+      toast.error("Something went wrong");
     } finally {
       setLoading(false);
     }
