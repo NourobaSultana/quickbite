@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, useEffect, useCallback } from "react";
+import { FormEvent, useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   FiTag,
@@ -19,7 +19,7 @@ interface CategoryItem {
   createdAt: string;
 }
 
-export default function CategoryPage() {
+function CategoryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const restaurantId = searchParams.get("restaurantId");
@@ -330,5 +330,13 @@ export default function CategoryPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function CategoryPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <CategoryContent />
+    </Suspense>
   );
 }

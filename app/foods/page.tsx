@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState, useEffect, useCallback } from "react";
+import { FormEvent, useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   FiShoppingBag,
@@ -25,7 +25,7 @@ interface FoodItem {
   createdAt: string;
 }
 
-export default function FoodsPage() {
+function FoodsContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const restaurantId = searchParams.get("restaurantId");
@@ -409,5 +409,13 @@ export default function FoodsPage() {
         </div>
       </div>
     </main>
+  );
+}
+
+export default function FoodsPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <FoodsContent />
+    </Suspense>
   );
 }
