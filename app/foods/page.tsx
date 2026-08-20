@@ -37,7 +37,7 @@ function FoodsContent() {
     price: "",
     image: "",
   });
-
+  // kjhfkjhfkj
   const [foods, setFoods] = useState<FoodItem[]>([]);
 
   const [loading, setLoading] = useState(false);
@@ -155,7 +155,7 @@ function FoodsContent() {
           </p>
 
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-            Add Food Items
+            Add Food Items Please
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
