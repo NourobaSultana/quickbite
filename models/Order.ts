@@ -23,13 +23,19 @@ export type OrderStatus =
 export interface IOrder extends Document {
   restaurantId: mongoose.Types.ObjectId;
   riderId?: mongoose.Types.ObjectId | null;
+
+  customerId: mongoose.Types.ObjectId; // ADD THIS
+
   items: IOrderItem[];
   totalAmount: number;
+
   customerName: string;
   customerPhone: string;
   deliveryAddress: string;
+
   deliveryLocation?: ILocation | null;
   status: OrderStatus;
+
   createdAt: Date;
   updatedAt: Date;
 }

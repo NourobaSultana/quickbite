@@ -36,6 +36,12 @@ interface OrderItem {
   quantity: number;
 }
 
+interface Customer {
+  _id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+}
 interface Order {
   _id: string;
   riderId?: Rider | string | null;

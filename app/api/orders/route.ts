@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const {
+      customerId,
       restaurantId,
       items,
       totalAmount,
@@ -21,6 +22,7 @@ export async function POST(request: NextRequest) {
     } = body;
 
     if (
+      !customerId ||
       !restaurantId ||
       !Array.isArray(items) ||
       items.length === 0 ||
@@ -30,7 +32,10 @@ export async function POST(request: NextRequest) {
       !deliveryAddress
     ) {
       return NextResponse.json(
-        { success: false, message: "Missing required order fields" },
+        {
+          success: false,
+          message: "Missing required order fields",
+        },
         { status: 400 },
       );
     }
@@ -39,14 +44,19 @@ export async function POST(request: NextRequest) {
     const availableRider = await Rider.findOne({ isAvailable: true });
 
     const order = await Order.create({
+      customerId,
       restaurantId,
+
       riderId: availableRider ? availableRider._id : null,
+
       items,
       totalAmount,
+
       customerName,
       customerPhone,
       deliveryAddress,
       deliveryLocation: deliveryLocation || null,
+
       status: availableRider ? "accepted" : "pending",
     });
 
@@ -81,17 +91,20 @@ export async function GET(request: NextRequest) {
 
     const filter: Record<string, unknown> = {};
 
+    // Restaurant-wise orders
     if (restaurantId) {
       filter.restaurantId = restaurantId;
     }
 
+    // Rider-wise orders
     if (riderId) {
       filter.riderId = riderId;
     }
 
     const orders = await Order.find(filter)
-      .populate("riderId")
+      .populate("riderId", "name phone vehicle currentLocation")
       .populate("restaurantId", "name address phone image")
+      .populate("customerId", "name email phone")
       .sort({ createdAt: -1 });
 
     return NextResponse.json({
