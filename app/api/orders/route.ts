@@ -75,20 +75,37 @@ export async function GET(request: NextRequest) {
     await dbConnect();
 
     const { searchParams } = new URL(request.url);
+
     const restaurantId = searchParams.get("restaurantId");
+    const riderId = searchParams.get("riderId");
 
     const filter: Record<string, unknown> = {};
-    if (restaurantId) filter.restaurantId = restaurantId;
+
+    if (restaurantId) {
+      filter.restaurantId = restaurantId;
+    }
+
+    if (riderId) {
+      filter.riderId = riderId;
+    }
 
     const orders = await Order.find(filter)
       .populate("riderId")
+      .populate("restaurantId", "name address phone image")
       .sort({ createdAt: -1 });
 
-    return NextResponse.json({ success: true, orders });
+    return NextResponse.json({
+      success: true,
+      orders,
+    });
   } catch (error) {
     console.error("Fetch orders error:", error);
+
     return NextResponse.json(
-      { success: false, message: "Failed to fetch orders" },
+      {
+        success: false,
+        message: "Failed to fetch orders",
+      },
       { status: 500 },
     );
   }
