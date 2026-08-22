@@ -76,7 +76,7 @@ interface CheckoutForm {
 export default function RestaurantDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
 
   const restaurantId = params.restaurantId as string;
 
@@ -403,6 +403,11 @@ export default function RestaurantDetailsPage() {
   };
 
   const placeOrder = async () => {
+    if (!user?._id) {
+      setCheckoutError("User information is missing. Please login again.");
+      return;
+    }
+
     if (
       !checkoutForm.name.trim() ||
       !checkoutForm.phone.trim() ||
@@ -423,19 +428,27 @@ export default function RestaurantDetailsPage() {
     try {
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
+
         body: JSON.stringify({
+          customerId: user._id,
           restaurantId,
+
           items: cart.map((item) => ({
             foodId: item.foodId,
             name: item.name,
             price: item.price,
             quantity: item.quantity,
           })),
+
           totalAmount: cartTotal,
+
           customerName: checkoutForm.name.trim(),
           customerPhone: checkoutForm.phone.trim(),
           deliveryAddress: checkoutForm.address.trim(),
+
           deliveryLocation,
         }),
       });
@@ -447,7 +460,6 @@ export default function RestaurantDetailsPage() {
         return;
       }
 
-      // Clear the cart for this restaurant now that the order exists.
       setCart([]);
       localStorage.removeItem(`quickbite-cart-${restaurantId}`);
 

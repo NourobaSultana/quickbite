@@ -82,6 +82,11 @@ const orderSchema = new Schema<IOrder>(
       ref: "Restaurant",
       required: true,
     },
+    customerId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
 
     riderId: {
       type: Schema.Types.ObjectId,
