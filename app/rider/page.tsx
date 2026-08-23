@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   FiPackage,
@@ -104,7 +104,7 @@ const statusConfig = {
   },
 };
 
-export default function RiderPage() {
+function RiderContent() {
   const searchParams = useSearchParams();
 
   const riderId = searchParams.get("riderId");
@@ -499,5 +499,19 @@ function StatCard({
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RiderPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-gray-50">
+          <p className="text-gray-500">Loading rider dashboard...</p>
+        </main>
+      }
+    >
+      <RiderContent />
+    </Suspense>
   );
 }
