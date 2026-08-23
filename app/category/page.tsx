@@ -10,6 +10,7 @@ import {
   FiList,
   FiArrowLeft,
   FiArrowRight,
+  FiCheck,
 } from "react-icons/fi";
 
 interface CategoryItem {
@@ -17,6 +18,69 @@ interface CategoryItem {
   name: string;
   restaurantId: string;
   createdAt: string;
+}
+
+// Same merchant-onboarding tokens as the "Create your restaurant" page —
+// this is step 2 of the same setup flow, not a new surface.
+const M = {
+  bg: "#FAFAF9",
+  paper: "#FFFFFF",
+  ink: "#14161A",
+  inkSoft: "rgba(20,22,26,0.56)",
+  line: "#E7E5E1",
+  brand: "#FF4E1F",
+  brandTint: "#FFF0E9",
+  mint: "#0E7A5F",
+  mintTint: "#E9F5F0",
+};
+
+function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
+  const steps = ["Restaurant", "Categories", "Menu items"];
+
+  return (
+    <div className="mb-8 flex items-center gap-2">
+      {steps.map((label, i) => {
+        const n = (i + 1) as 1 | 2 | 3;
+        const done = n < step;
+        const current = n === step;
+
+        return (
+          <div key={label} className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span
+                className="rq-mono flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                style={
+                  done
+                    ? { background: M.mint, color: "#fff" }
+                    : current
+                      ? { background: M.brand, color: "#fff" }
+                      : {
+                          background: M.paper,
+                          color: M.inkSoft,
+                          border: `1px solid ${M.line}`,
+                        }
+                }
+              >
+                {done ? <FiCheck size={12} /> : n}
+              </span>
+              <span
+                className="hidden text-xs font-semibold sm:inline"
+                style={{ color: current ? M.ink : M.inkSoft }}
+              >
+                {label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <span
+                className="h-px w-6 sm:w-10"
+                style={{ background: done ? M.mint : M.line }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function CategoryContent() {
@@ -43,10 +107,7 @@ function CategoryContent() {
         credentials: "include",
       });
       const data = await res.json();
-
-      if (data.success) {
-        setCategories(data.categories);
-      }
+      if (data.success) setCategories(data.categories);
     } catch (err) {
       console.error("Failed to fetch categories:", err);
     } finally {
@@ -64,7 +125,6 @@ function CategoryContent() {
     setError("");
     setMessage("");
 
-    // Split on commas, trim whitespace, drop empties, dedupe.
     const names = Array.from(
       new Set(
         name
@@ -139,92 +199,137 @@ function CategoryContent() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl">
+    <main
+      className="min-h-screen px-4 py-8 sm:px-6 lg:px-8"
+      style={{
+        background: M.bg,
+        color: M.ink,
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+        .rq-mono { font-family: 'IBM Plex Mono', monospace; }
+        .rq-input { transition: border-color .15s, box-shadow .15s; }
+        .rq-input:focus { border-color: ${M.brand} !important; box-shadow: 0 0 0 3px ${M.brandTint}; }
+        .rq-row { transition: background .15s ease; }
+        .rq-row:hover { background: ${M.bg}; }
+      `}</style>
+
+      <div className="mx-auto max-w-3xl">
+        <StepIndicator step={2} />
+
         {/* Header */}
         <div className="mb-8">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-orange-500">
-            QuickBite Restaurant
+          <p
+            className="rq-mono mb-2 text-xs font-semibold uppercase tracking-[0.18em]"
+            style={{ color: M.brand }}
+          >
+            QuickBite for Restaurants
           </p>
-
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-            Menu Categories
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+            Menu categories
           </h1>
-
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
-            Add the food items your restaurant serves — burger, pizza, and more.
+          <p
+            className="mt-2 max-w-2xl text-sm leading-6 sm:text-base"
+            style={{ color: M.inkSoft }}
+          >
+            Group your menu into categories — burger, pizza, and more. You'll
+            add food items to each one next.
           </p>
         </div>
 
         {!restaurantId && (
-          <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+          <div
+            className="mb-6 rounded-xl px-4 py-3 text-sm"
+            style={{
+              border: "1px solid #FCA5A5",
+              background: "#FEF2F2",
+              color: "#DC2626",
+            }}
+          >
             No restaurant selected. Please create a restaurant first.
           </div>
         )}
 
-        {/* Main Card - Add Category Form */}
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
-          {/* Card Header */}
-          <div className="border-b border-gray-100 px-5 py-5 sm:px-8">
+        {/* Add Category Form */}
+        <div
+          className="overflow-hidden rounded-2xl"
+          style={{ background: M.paper, border: `1px solid ${M.line}` }}
+        >
+          <div
+            className="px-5 py-5 sm:px-8"
+            style={{ borderBottom: `1px solid ${M.line}` }}
+          >
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
-                <FiTag size={21} />
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-xl"
+                style={{ background: M.brandTint, color: M.brand }}
+              >
+                <FiTag size={20} />
               </div>
-
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Add Menu Category
-                </h2>
-
-                <p className="text-sm text-gray-500">
-                  Add categories like burger, pizza, pasta, etc. to your menu.
+                <h2 className="text-lg font-bold">Add menu category</h2>
+                <p className="text-sm" style={{ color: M.inkSoft }}>
+                  Separate multiple names with commas — e.g. Burger, Pizza,
+                  Pasta.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="p-5 sm:p-8">
-            <div>
-              <label
-                htmlFor="name"
-                className="mb-2 block text-sm font-medium text-gray-700"
-              >
-                Category Name <span className="text-red-500">*</span>
-              </label>
+            <label htmlFor="name" className="mb-2 block text-sm font-medium">
+              Category name <span style={{ color: M.brand }}>*</span>
+            </label>
 
-              <input
-                id="name"
-                name="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Burger, Pizza, Pasta"
-                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
-              />
-            </div>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Burger, Pizza, Pasta"
+              className="rq-input w-full rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400"
+              style={{ border: `1px solid ${M.line}`, background: M.paper }}
+            />
 
-            {/* Error */}
             {error && (
-              <div className="mt-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <div
+                className="mt-6 rounded-xl px-4 py-3 text-sm"
+                style={{
+                  border: "1px solid #FCA5A5",
+                  background: "#FEF2F2",
+                  color: "#DC2626",
+                }}
+              >
                 {error}
               </div>
             )}
 
-            {/* Success */}
             {message && (
-              <div className="mt-6 flex items-center gap-3 rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-700">
+              <div
+                className="mt-6 flex items-center gap-3 rounded-xl px-4 py-3 text-sm"
+                style={{
+                  border: "1px solid #B7E4D5",
+                  background: M.mintTint,
+                  color: M.mint,
+                }}
+              >
                 <FiCheckCircle size={18} />
                 {message}
               </div>
             )}
 
-            {/* Submit */}
-            <div className="mt-8 flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end">
+            <div
+              className="mt-8 flex flex-col-reverse gap-3 pt-6 sm:flex-row sm:justify-end"
+              style={{ borderTop: `1px solid ${M.line}` }}
+            >
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:w-auto"
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-medium transition hover:bg-gray-50 sm:w-auto"
+                style={{ border: `1px solid ${M.line}`, color: M.ink }}
               >
                 <FiArrowLeft size={16} />
                 Back
@@ -233,7 +338,8 @@ function CategoryContent() {
               <button
                 type="submit"
                 disabled={loading || !restaurantId}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-7 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                style={{ background: M.brand }}
               >
                 {loading ? (
                   <>
@@ -243,7 +349,7 @@ function CategoryContent() {
                 ) : (
                   <>
                     <FiPlus size={16} />
-                    Add Item
+                    Add category
                   </>
                 )}
               </button>
@@ -251,46 +357,69 @@ function CategoryContent() {
           </form>
         </div>
 
-        {/* Category List Card */}
-        <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
-          <div className="border-b border-gray-100 px-5 py-5 sm:px-8">
+        {/* Category List */}
+        <div
+          className="mt-6 overflow-hidden rounded-2xl"
+          style={{ background: M.paper, border: `1px solid ${M.line}` }}
+        >
+          <div
+            className="flex items-center justify-between px-5 py-5 sm:px-8"
+            style={{ borderBottom: `1px solid ${M.line}` }}
+          >
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
-                <FiList size={21} />
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-xl"
+                style={{ background: M.brandTint, color: M.brand }}
+              >
+                <FiList size={20} />
               </div>
-
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Your Categories
-                </h2>
-                <p className="text-sm text-gray-500">
-                  Click a category to add or view its food items.
+                <h2 className="text-lg font-bold">Your categories</h2>
+                <p className="text-sm" style={{ color: M.inkSoft }}>
+                  Click a category to add its food items.
                 </p>
               </div>
             </div>
+
+            {!fetching && categories.length > 0 && (
+              <span
+                className="rq-mono rounded-full px-3 py-1 text-xs font-semibold"
+                style={{ background: M.brandTint, color: M.brand }}
+              >
+                {categories.length}
+              </span>
+            )}
           </div>
 
           <div className="p-5 sm:p-8">
             {fetching ? (
-              <p className="text-sm text-gray-400">Loading categories...</p>
-            ) : categories.length === 0 ? (
-              <p className="text-sm text-gray-400">
-                No categories added yet. Add your first one above.
+              <p className="text-sm" style={{ color: M.inkSoft }}>
+                Loading categories...
               </p>
+            ) : categories.length === 0 ? (
+              <div
+                className="rounded-xl px-5 py-10 text-center"
+                style={{ border: `1.5px dashed ${M.line}` }}
+              >
+                <p className="text-sm" style={{ color: M.inkSoft }}>
+                  No categories added yet. Add your first one above.
+                </p>
+              </div>
             ) : (
-              <ul className="divide-y divide-gray-100">
+              <ul className="space-y-1">
                 {categories.map((cat) => (
                   <li
                     key={cat._id}
-                    className="flex items-center justify-between py-3"
+                    className="rq-row flex items-center justify-between rounded-xl px-3 py-3"
                   >
                     <div className="flex items-center gap-3">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-500">
-                        <FiTag size={14} />
+                      <span
+                        className="flex h-9 w-9 items-center justify-center rounded-lg"
+                        style={{ background: M.brandTint, color: M.brand }}
+                      >
+                        <FiTag size={15} />
                       </span>
-                      <span className="font-medium text-gray-800">
-                        {cat.name}
-                      </span>
+                      <span className="text-sm font-semibold">{cat.name}</span>
                     </div>
 
                     <button
@@ -300,9 +429,10 @@ function CategoryContent() {
                           `/foods?restaurantId=${restaurantId}&categoryId=${cat._id}`,
                         )
                       }
-                      className="flex items-center gap-1.5 rounded-lg border border-orange-200 px-3 py-1.5 text-xs font-medium text-orange-600 transition hover:bg-orange-50"
+                      className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition hover:bg-orange-50"
+                      style={{ border: `1px solid ${M.brand}`, color: M.brand }}
                     >
-                      Add Food
+                      Add food
                       <FiArrowRight size={13} />
                     </button>
                   </li>
@@ -312,19 +442,21 @@ function CategoryContent() {
           </div>
         </div>
 
-        {/* Information */}
-        <div className="mt-6 rounded-2xl border border-orange-100 bg-orange-50 p-5">
-          <h3 className="font-semibold text-gray-900">Before you submit</h3>
-
-          <ul className="mt-3 space-y-2 text-sm text-gray-600">
+        {/* Info */}
+        <div
+          className="mt-6 rounded-2xl p-5"
+          style={{ background: M.brandTint, border: "1px solid #FFD9C4" }}
+        >
+          <h3 className="text-sm font-bold">Before you submit</h3>
+          <ul className="mt-3 space-y-1.5 text-sm" style={{ color: M.inkSoft }}>
             <li>• Category names must be unique within this restaurant.</li>
             <li>
-              • After creating a category, you'll be taken to add food items to
-              it.
+              • After creating a category, you can add food items to it right
+              away.
             </li>
             <li>
-              • You can add more foods to any category later using the "Add
-              Food" button.
+              • You can always add more foods to any category later using "Add
+              food".
             </li>
           </ul>
         </div>

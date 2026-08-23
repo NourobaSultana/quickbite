@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 // import { useAuth } from "@/app/context/AuthContext";
@@ -16,23 +16,43 @@ interface Restaurant {
   isActive: boolean;
 }
 
+// Distinct token set from the customer app on purpose: this is a review
+// queue an operator scans quickly, not a menu a customer browses for
+// appetite — cooler neutrals, monospace for data, a status rail instead
+// of big photography.
+const A = {
+  bg: "#F6F7F9",
+  paper: "#FFFFFF",
+  ink: "#14161A",
+  inkSoft: "rgba(20,22,26,0.56)",
+  line: "#E4E7EC",
+  brand: "#FF4E1F",
+  brandTint: "#FFF0E9",
+  approved: "#0E7A5F",
+  approvedTint: "#E9F5F0",
+  pending: "#B45309",
+  pendingTint: "#FEF6E7",
+  danger: "#DC2626",
+  dangerTint: "#FEF2F2",
+};
+
+type Filter = "all" | "pending" | "approved";
+
 export default function Page() {
   const { logout } = useAuth();
   const router = useRouter();
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<Filter>("all");
+  const [search, setSearch] = useState("");
 
   const approveRestaurant = async (restaurantId: string) => {
     try {
       const response = await fetch(`/api/restaurants/${restaurantId}/approve`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          isApproved: true,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isApproved: true }),
       });
 
       const data = await response.json();
@@ -55,16 +75,13 @@ export default function Page() {
       console.error("Approve restaurant error:", error);
     }
   };
+
   const notApproveRestaurant = async (restaurantId: string) => {
     try {
       const response = await fetch(`/api/restaurants/${restaurantId}/approve`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          isApproved: false,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isApproved: false }),
       });
 
       const data = await response.json();
@@ -90,12 +107,8 @@ export default function Page() {
     const getRestaurants = async () => {
       try {
         const response = await fetch("/api/restaurants");
-
         const data = await response.json();
-
-        if (data.success) {
-          setRestaurants(data.restaurants);
-        }
+        if (data.success) setRestaurants(data.restaurants);
       } catch (error) {
         console.error("Failed to fetch restaurants:", error);
       } finally {
@@ -106,261 +119,327 @@ export default function Page() {
     getRestaurants();
   }, []);
 
+  const approvedCount = restaurants.filter((r) => r.isApproved).length;
+  const pendingCount = restaurants.filter((r) => !r.isApproved).length;
+
+  const visibleRestaurants = useMemo(() => {
+    let list = restaurants;
+
+    if (filter === "approved") list = list.filter((r) => r.isApproved);
+    if (filter === "pending") list = list.filter((r) => !r.isApproved);
+
+    const q = search.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (r) =>
+          r.name.toLowerCase().includes(q) ||
+          r.address?.toLowerCase().includes(q) ||
+          r.phone?.toLowerCase().includes(q),
+      );
+    }
+
+    return list;
+  }, [restaurants, filter, search]);
+
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
+    <div
+      className="min-h-screen"
+      style={{
+        background: A.bg,
+        color: A.ink,
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+        .ad-mono { font-family: 'IBM Plex Mono', monospace; }
+        .ad-row { transition: background .15s ease, box-shadow .15s ease; }
+        .ad-row:hover { background: #FAFAFB; }
+        .ad-focus:focus-visible { outline: 2.5px solid ${A.brand}; outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) { .ad-row { transition: none !important; } }
+      `}</style>
+
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         {/* ================= HEADER ================= */}
         <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="mb-1 text-sm font-semibold uppercase tracking-wider text-orange-500">
-              QuickBite Administration
+            <p
+              className="ad-mono text-xs font-semibold uppercase tracking-[0.18em]"
+              style={{ color: A.brand }}
+            >
+              QuickBite Admin
             </p>
-
-            <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Admin Dashboard
+            <h2 className="mt-1 text-3xl font-extrabold tracking-tight sm:text-[34px]">
+              Restaurant approvals
             </h2>
-
-            <p className="mt-2 text-sm text-gray-500 sm:text-base">
-              Manage and approve restaurants registered on QuickBite.
+            <p className="mt-1.5 text-sm" style={{ color: A.inkSoft }}>
+              Review applications and control who's live on QuickBite.
             </p>
           </div>
 
-          {/* Logout */}
-          <button
+          {/* <button
             onClick={async () => {
               await logout();
               router.replace("/login");
             }}
-            className="flex w-full items-center justify-center rounded-xl border border-red-100 bg-white px-5 py-3 text-sm font-semibold text-red-500 shadow-sm transition hover:border-red-200 hover:bg-red-50 sm:w-auto"
+            className="ad-focus flex w-full items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold shadow-sm transition sm:w-auto"
+            style={{
+              border: `1px solid #FCA5A5`,
+              background: A.paper,
+              color: A.danger,
+            }}
           >
-            Logout
-          </button>
+            Log out
+          </button> */}
         </div>
 
-        {/* ================= SUMMARY CARDS ================= */}
-        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Total Restaurants */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
+        {/* ================= KPI ROW ================= */}
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div
+            className="rounded-2xl p-5"
+            style={{ background: A.paper, border: `1px solid ${A.line}` }}
+          >
             <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">
-                  Total Restaurants
-                </p>
+              <p className="text-sm font-medium" style={{ color: A.inkSoft }}>
+                Total restaurants
+              </p>
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: A.ink }}
+              />
+            </div>
+            <h3 className="ad-mono mt-3 text-3xl font-bold">
+              {restaurants.length}
+            </h3>
+          </div>
 
-                <h3 className="mt-2 text-3xl font-bold text-gray-900">
-                  {restaurants.length}
-                </h3>
-              </div>
+          <div
+            className="rounded-2xl p-5"
+            style={{ background: A.paper, border: `1px solid ${A.line}` }}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium" style={{ color: A.inkSoft }}>
+                Approved
+              </p>
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: A.approved }}
+              />
+            </div>
+            <h3
+              className="ad-mono mt-3 text-3xl font-bold"
+              style={{ color: A.approved }}
+            >
+              {approvedCount}
+            </h3>
+          </div>
 
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-50 text-xl">
+          <div
+            className="rounded-2xl p-5"
+            style={{ background: A.paper, border: `1px solid ${A.line}` }}
+          >
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium" style={{ color: A.inkSoft }}>
+                Pending review
+              </p>
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: A.pending }}
+              />
+            </div>
+            <h3
+              className="ad-mono mt-3 text-3xl font-bold"
+              style={{ color: A.pending }}
+            >
+              {pendingCount}
+            </h3>
+          </div>
+        </div>
+
+        {/* ================= QUEUE ================= */}
+        <div
+          className="overflow-hidden rounded-2xl"
+          style={{ background: A.paper, border: `1px solid ${A.line}` }}
+        >
+          {/* Toolbar */}
+          <div
+            className="flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"
+            style={{ borderBottom: `1px solid ${A.line}` }}
+          >
+            <div
+              className="flex gap-1 rounded-xl p-1"
+              style={{ background: A.bg }}
+            >
+              {(
+                [
+                  ["all", "All", restaurants.length],
+                  ["pending", "Pending", pendingCount],
+                  ["approved", "Approved", approvedCount],
+                ] as [Filter, string, number][]
+              ).map(([key, label, count]) => (
+                <button
+                  key={key}
+                  onClick={() => setFilter(key)}
+                  className="ad-focus ad-mono rounded-lg px-3.5 py-2 text-xs font-semibold uppercase tracking-wide transition"
+                  style={
+                    filter === key
+                      ? { background: A.ink, color: "#fff" }
+                      : { background: "transparent", color: A.inkSoft }
+                  }
+                >
+                  {label} · {count}
+                </button>
+              ))}
+            </div>
+
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, address, or phone"
+              className="ad-focus w-full rounded-xl px-4 py-2.5 text-sm outline-none sm:w-72"
+              style={{
+                border: `1px solid ${A.line}`,
+                background: A.paper,
+                color: A.ink,
+              }}
+            />
+          </div>
+
+          {/* Content */}
+          {loading ? (
+            <div className="flex min-h-[240px] flex-col items-center justify-center">
+              <div
+                className="h-9 w-9 animate-spin rounded-full border-4"
+                style={{ borderColor: A.line, borderTopColor: A.brand }}
+              />
+              <p className="mt-4 text-sm" style={{ color: A.inkSoft }}>
+                Loading restaurants...
+              </p>
+            </div>
+          ) : visibleRestaurants.length === 0 ? (
+            <div className="flex min-h-[240px] flex-col items-center justify-center px-5 text-center">
+              <div
+                className="flex h-14 w-14 items-center justify-center rounded-full text-2xl"
+                style={{ background: A.brandTint }}
+              >
                 🍽️
               </div>
+              <h4 className="mt-4 text-base font-semibold">
+                {search ? "No matches" : "No restaurants found"}
+              </h4>
+              <p className="mt-1 max-w-md text-sm" style={{ color: A.inkSoft }}>
+                {search
+                  ? "Try a different name, address, or phone number."
+                  : "There are currently no restaurants registered on QuickBite."}
+              </p>
             </div>
-          </div>
+          ) : (
+            <ul>
+              {visibleRestaurants.map((restaurant) => (
+                <li
+                  key={restaurant._id}
+                  className="ad-row relative flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-center sm:px-6"
+                  style={{ borderBottom: `1px solid ${A.line}` }}
+                >
+                  {/* Status rail */}
+                  <span
+                    className="absolute left-0 top-0 h-full w-1"
+                    style={{
+                      background: restaurant.isApproved
+                        ? A.approved
+                        : A.pending,
+                    }}
+                    aria-hidden="true"
+                  />
 
-          {/* Approved */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">Approved</p>
-
-                <h3 className="mt-2 text-3xl font-bold text-green-600">
-                  {
-                    restaurants.filter((restaurant) => restaurant.isApproved)
-                      .length
-                  }
-                </h3>
-              </div>
-
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-50 text-xl">
-                ✓
-              </div>
-            </div>
-          </div>
-
-          {/* Pending */}
-          <div className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-500">
-                  Pending Approval
-                </p>
-
-                <h3 className="mt-2 text-3xl font-bold text-amber-500">
-                  {
-                    restaurants.filter((restaurant) => !restaurant.isApproved)
-                      .length
-                  }
-                </h3>
-              </div>
-
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-amber-50 text-xl">
-                ⏳
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ================= RESTAURANTS SECTION ================= */}
-        <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
-          {/* Section Header */}
-          <div className="border-b border-gray-100 px-5 py-5 sm:px-7">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Restaurants</h3>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Review and manage restaurant applications.
-                </p>
-              </div>
-
-              <span className="w-fit rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-600">
-                {restaurants.length} Restaurants
-              </span>
-            </div>
-          </div>
-
-          {/* ================= CONTENT ================= */}
-          <div className="p-5 sm:p-7">
-            {/* Loading */}
-            {loading ? (
-              <div className="flex min-h-[250px] flex-col items-center justify-center">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-gray-200 border-t-orange-500" />
-
-                <p className="mt-4 text-sm text-gray-500">
-                  Loading restaurants...
-                </p>
-              </div>
-            ) : restaurants.length === 0 ? (
-              /* Empty State */
-              <div className="flex min-h-[250px] flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 bg-gray-50 px-5 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-50 text-2xl">
-                  🍽️
-                </div>
-
-                <h4 className="mt-4 text-lg font-semibold text-gray-900">
-                  No restaurants found
-                </h4>
-
-                <p className="mt-1 max-w-md text-sm text-gray-500">
-                  There are currently no restaurants registered on QuickBite.
-                </p>
-              </div>
-            ) : (
-              /* ================= RESTAURANT GRID ================= */
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                {restaurants.map((restaurant) => (
+                  {/* Thumbnail */}
                   <div
-                    key={restaurant._id}
-                    className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md"
+                    className="h-16 w-16 shrink-0 overflow-hidden rounded-xl"
+                    style={{ background: A.brandTint }}
                   >
-                    {/* Restaurant Image */}
-                    <div className="relative h-48 overflow-hidden bg-gray-100">
-                      {restaurant.image ? (
-                        <img
-                          src={restaurant.image}
-                          alt={restaurant.name}
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center bg-orange-50">
-                          <span className="text-5xl">🍽️</span>
-                        </div>
-                      )}
-
-                      {/* Status */}
-                      <div className="absolute right-4 top-4">
-                        {restaurant.isApproved ? (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 shadow-sm">
-                            <span className="h-2 w-2 rounded-full bg-green-500" />
-                            Approved
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 shadow-sm">
-                            <span className="h-2 w-2 rounded-full bg-amber-500" />
-                            Pending
-                          </span>
-                        )}
+                    {restaurant.image ? (
+                      <img
+                        src={restaurant.image}
+                        alt={restaurant.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-2xl">
+                        🍽️
                       </div>
+                    )}
+                  </div>
+
+                  {/* Details */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="text-base font-bold">{restaurant.name}</h4>
+                      <span
+                        className="ad-mono inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide"
+                        style={
+                          restaurant.isApproved
+                            ? { background: A.approvedTint, color: A.approved }
+                            : { background: A.pendingTint, color: A.pending }
+                        }
+                      >
+                        <span
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{
+                            background: restaurant.isApproved
+                              ? A.approved
+                              : A.pending,
+                          }}
+                        />
+                        {restaurant.isApproved ? "Approved" : "Pending"}
+                      </span>
                     </div>
 
-                    {/* Restaurant Details */}
-                    <div className="p-5">
-                      {/* Name */}
-                      <div className="mb-4">
-                        <h4 className="text-xl font-bold text-gray-900">
-                          {restaurant.name}
-                        </h4>
+                    {restaurant.description && (
+                      <p
+                        className="mt-1 line-clamp-1 text-sm"
+                        style={{ color: A.inkSoft }}
+                      >
+                        {restaurant.description}
+                      </p>
+                    )}
 
-                        <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-500">
-                          {restaurant.description}
-                        </p>
-                      </div>
-
-                      {/* Information */}
-                      <div className="space-y-3 border-t border-gray-100 pt-4">
-                        {/* Address */}
-                        <div className="flex items-start gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-500">
-                            📍
-                          </div>
-
-                          <div>
-                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                              Address
-                            </p>
-
-                            <p className="mt-0.5 text-sm font-medium text-gray-700">
-                              {restaurant.address}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Phone */}
-                        <div className="flex items-start gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-500">
-                            ☎
-                          </div>
-
-                          <div>
-                            <p className="text-xs font-medium uppercase tracking-wide text-gray-400">
-                              Phone
-                            </p>
-
-                            <p className="mt-0.5 text-sm font-medium text-gray-700">
-                              {restaurant.phone}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Action */}
-                      <div className="mt-5 border-t border-gray-100 pt-4">
-                        <button
-                          onClick={() => {
-                            if (restaurant.isApproved) {
-                              notApproveRestaurant(restaurant._id);
-                            } else {
-                              approveRestaurant(restaurant._id);
-                            }
-                          }}
-                          className={`w-full rounded-xl px-4 py-3 text-sm font-semibold transition ${
-                            restaurant.isApproved
-                              ? "border border-red-100 bg-red-50 text-red-600 hover:bg-red-100"
-                              : "bg-orange-500 text-white shadow-sm hover:bg-orange-600"
-                          }`}
-                        >
-                          {restaurant.isApproved
-                            ? "Remove Approval"
-                            : "Approve Restaurant"}
-                        </button>
-                      </div>
+                    <div
+                      className="ad-mono mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs"
+                      style={{ color: A.inkSoft }}
+                    >
+                      {restaurant.address && (
+                        <span>📍 {restaurant.address}</span>
+                      )}
+                      {restaurant.phone && <span>☎ {restaurant.phone}</span>}
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+
+                  {/* Action */}
+                  <div className="w-full shrink-0 sm:w-auto">
+                    <button
+                      onClick={() =>
+                        restaurant.isApproved
+                          ? notApproveRestaurant(restaurant._id)
+                          : approveRestaurant(restaurant._id)
+                      }
+                      className="ad-focus w-full rounded-xl px-4 py-2.5 text-sm font-semibold transition sm:w-auto"
+                      style={
+                        restaurant.isApproved
+                          ? {
+                              border: `1px solid #FCA5A5`,
+                              background: A.dangerTint,
+                              color: A.danger,
+                            }
+                          : { background: A.brand, color: "#fff" }
+                      }
+                    >
+                      {restaurant.isApproved ? "Remove approval" : "Approve"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

@@ -12,6 +12,7 @@ import {
   FiDollarSign,
   FiImage,
   FiFileText,
+  FiCheck,
 } from "react-icons/fi";
 
 interface FoodItem {
@@ -23,6 +24,69 @@ interface FoodItem {
   restaurantId: string;
   categoryId: string;
   createdAt: string;
+}
+
+// Same merchant-onboarding tokens as the restaurant + category pages —
+// this is step 3 of the same setup flow.
+const M = {
+  bg: "#FAFAF9",
+  paper: "#FFFFFF",
+  ink: "#14161A",
+  inkSoft: "rgba(20,22,26,0.56)",
+  line: "#E7E5E1",
+  brand: "#FF4E1F",
+  brandTint: "#FFF0E9",
+  mint: "#0E7A5F",
+  mintTint: "#E9F5F0",
+};
+
+function StepIndicator({ step }: { step: 1 | 2 | 3 }) {
+  const steps = ["Restaurant", "Categories", "Menu items"];
+
+  return (
+    <div className="mb-8 flex items-center gap-2">
+      {steps.map((label, i) => {
+        const n = (i + 1) as 1 | 2 | 3;
+        const done = n < step;
+        const current = n === step;
+
+        return (
+          <div key={label} className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
+              <span
+                className="rq-mono flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                style={
+                  done
+                    ? { background: M.mint, color: "#fff" }
+                    : current
+                      ? { background: M.brand, color: "#fff" }
+                      : {
+                          background: M.paper,
+                          color: M.inkSoft,
+                          border: `1px solid ${M.line}`,
+                        }
+                }
+              >
+                {done ? <FiCheck size={12} /> : n}
+              </span>
+              <span
+                className="hidden text-xs font-semibold sm:inline"
+                style={{ color: current ? M.ink : M.inkSoft }}
+              >
+                {label}
+              </span>
+            </div>
+            {i < steps.length - 1 && (
+              <span
+                className="h-px w-6 sm:w-10"
+                style={{ background: done ? M.mint : M.line }}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function FoodsContent() {
@@ -37,7 +101,7 @@ function FoodsContent() {
     price: "",
     image: "",
   });
-  // kjhfkjhfkj
+
   const [foods, setFoods] = useState<FoodItem[]>([]);
 
   const [loading, setLoading] = useState(false);
@@ -68,10 +132,7 @@ function FoodsContent() {
       // this will 404 — add one following the same pattern as your
       // category GET route, filtering by restaurantId and categoryId.
       const data = await res.json();
-
-      if (data.success) {
-        setFoods(data.foods);
-      }
+      if (data.success) setFoods(data.foods);
     } catch (err) {
       console.error("Failed to fetch foods:", err);
     } finally {
@@ -146,62 +207,93 @@ function FoodsContent() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
+    <main
+      className="min-h-screen px-4 py-8 sm:px-6 lg:px-8"
+      style={{
+        background: M.bg,
+        color: M.ink,
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap');
+        .rq-mono { font-family: 'IBM Plex Mono', monospace; }
+        .rq-input { transition: border-color .15s, box-shadow .15s; }
+        .rq-input:focus { border-color: ${M.brand} !important; box-shadow: 0 0 0 3px ${M.brandTint}; }
+        .rq-food-card { transition: border-color .15s, background .15s, transform .2s; }
+        .rq-food-card:hover { border-color: ${M.brand} !important; transform: translateY(-2px); }
+      `}</style>
+
       <div className="mx-auto max-w-5xl">
+        <StepIndicator step={3} />
+
         {/* Header */}
         <div className="mb-8">
-          <p className="mb-2 text-sm font-semibold uppercase tracking-wider text-orange-500">
-            QuickBite Restaurant
+          <p
+            className="rq-mono mb-2 text-xs font-semibold uppercase tracking-[0.18em]"
+            style={{ color: M.brand }}
+          >
+            QuickBite for Restaurants
           </p>
-
-          <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-            Add Food Items Please
+          <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+            Add menu items
           </h1>
-
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
+          <p
+            className="mt-2 max-w-2xl text-sm leading-6 sm:text-base"
+            style={{ color: M.inkSoft }}
+          >
             Add dishes to this category with pricing, description, and an image.
           </p>
         </div>
 
         {(!restaurantId || !categoryId) && (
-          <div className="mb-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+          <div
+            className="mb-6 rounded-xl px-4 py-3 text-sm"
+            style={{
+              border: "1px solid #FCA5A5",
+              background: "#FEF2F2",
+              color: "#DC2626",
+            }}
+          >
             Restaurant or category is missing. Please go back to your categories
             and select one first.
           </div>
         )}
 
-        {/* Main Card - Add Food Form */}
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
-          {/* Card Header */}
-          <div className="border-b border-gray-100 px-5 py-5 sm:px-8">
+        {/* Add Food Form */}
+        <div
+          className="overflow-hidden rounded-2xl"
+          style={{ background: M.paper, border: `1px solid ${M.line}` }}
+        >
+          <div
+            className="px-5 py-5 sm:px-8"
+            style={{ borderBottom: `1px solid ${M.line}` }}
+          >
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
-                <FiShoppingBag size={21} />
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-xl"
+                style={{ background: M.brandTint, color: M.brand }}
+              >
+                <FiShoppingBag size={20} />
               </div>
-
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Food Details
-                </h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="text-lg font-bold">Food details</h2>
+                <p className="text-sm" style={{ color: M.inkSoft }}>
                   Provide accurate details for this menu item.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="p-5 sm:p-8">
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {/* Food Name */}
               <div className="md:col-span-2">
                 <label
                   htmlFor="name"
-                  className="mb-2 block text-sm font-medium text-gray-700"
+                  className="mb-2 block text-sm font-medium"
                 >
-                  Food Name <span className="text-red-500">*</span>
+                  Food name <span style={{ color: M.brand }}>*</span>
                 </label>
-
                 <input
                   id="name"
                   name="name"
@@ -210,20 +302,19 @@ function FoodsContent() {
                   onChange={handleChange}
                   placeholder="e.g. Cheese Burger"
                   required
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                  className="rq-input w-full rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400"
+                  style={{ border: `1px solid ${M.line}`, background: M.paper }}
                 />
               </div>
 
-              {/* Description */}
               <div className="md:col-span-2">
                 <label
                   htmlFor="description"
-                  className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700"
+                  className="mb-2 flex items-center gap-2 text-sm font-medium"
                 >
                   <FiFileText size={16} />
-                  Description <span className="text-red-500">*</span>
+                  Description <span style={{ color: M.brand }}>*</span>
                 </label>
-
                 <textarea
                   id="description"
                   name="description"
@@ -232,20 +323,19 @@ function FoodsContent() {
                   placeholder="Describe the ingredients, taste, and portion size"
                   required
                   rows={4}
-                  className="w-full resize-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                  className="rq-input w-full resize-none rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400"
+                  style={{ border: `1px solid ${M.line}`, background: M.paper }}
                 />
               </div>
 
-              {/* Price */}
               <div>
                 <label
                   htmlFor="price"
-                  className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700"
+                  className="mb-2 flex items-center gap-2 text-sm font-medium"
                 >
                   <FiDollarSign size={16} />
-                  Price <span className="text-red-500">*</span>
+                  Price (৳) <span style={{ color: M.brand }}>*</span>
                 </label>
-
                 <input
                   id="price"
                   name="price"
@@ -254,22 +344,21 @@ function FoodsContent() {
                   step="0.01"
                   value={formData.price}
                   onChange={handleChange}
-                  placeholder="e.g. 9.99"
+                  placeholder="e.g. 350"
                   required
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                  className="rq-input w-full rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400"
+                  style={{ border: `1px solid ${M.line}`, background: M.paper }}
                 />
               </div>
 
-              {/* Image */}
               <div>
                 <label
                   htmlFor="image"
-                  className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700"
+                  className="mb-2 flex items-center gap-2 text-sm font-medium"
                 >
                   <FiImage size={16} />
                   Image URL
                 </label>
-
                 <input
                   id="image"
                   name="image"
@@ -277,32 +366,48 @@ function FoodsContent() {
                   value={formData.image}
                   onChange={handleChange}
                   placeholder="https://example.com/food.jpg"
-                  className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm outline-none transition placeholder:text-gray-400 focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                  className="rq-input w-full rounded-xl px-4 py-3 text-sm outline-none placeholder:text-gray-400"
+                  style={{ border: `1px solid ${M.line}`, background: M.paper }}
                 />
               </div>
             </div>
 
-            {/* Error */}
             {error && (
-              <div className="mt-6 rounded-xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-600">
+              <div
+                className="mt-6 rounded-xl px-4 py-3 text-sm"
+                style={{
+                  border: "1px solid #FCA5A5",
+                  background: "#FEF2F2",
+                  color: "#DC2626",
+                }}
+              >
                 {error}
               </div>
             )}
 
-            {/* Success */}
             {message && (
-              <div className="mt-6 flex items-center gap-3 rounded-xl border border-green-100 bg-green-50 px-4 py-3 text-sm text-green-700">
+              <div
+                className="mt-6 flex items-center gap-3 rounded-xl px-4 py-3 text-sm"
+                style={{
+                  border: "1px solid #B7E4D5",
+                  background: M.mintTint,
+                  color: M.mint,
+                }}
+              >
                 <FiCheckCircle size={18} />
                 {message}
               </div>
             )}
 
-            {/* Submit */}
-            <div className="mt-8 flex flex-col-reverse gap-3 border-t border-gray-100 pt-6 sm:flex-row sm:justify-end">
+            <div
+              className="mt-8 flex flex-col-reverse gap-3 pt-6 sm:flex-row sm:justify-end"
+              style={{ borderTop: `1px solid ${M.line}` }}
+            >
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-200 px-6 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50 sm:w-auto"
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-medium transition hover:bg-gray-50 sm:w-auto"
+                style={{ border: `1px solid ${M.line}`, color: M.ink }}
               >
                 <FiArrowLeft size={16} />
                 Back
@@ -311,7 +416,8 @@ function FoodsContent() {
               <button
                 type="submit"
                 disabled={loading || !restaurantId || !categoryId}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-7 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                className="flex w-full items-center justify-center gap-2 rounded-xl px-7 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                style={{ background: M.brand }}
               >
                 {loading ? (
                   <>
@@ -321,7 +427,7 @@ function FoodsContent() {
                 ) : (
                   <>
                     <FiPlus size={16} />
-                    Add Food
+                    Add food
                   </>
                 )}
               </button>
@@ -329,40 +435,66 @@ function FoodsContent() {
           </form>
         </div>
 
-        {/* Food List Card */}
-        <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-100">
-          <div className="border-b border-gray-100 px-5 py-5 sm:px-8">
+        {/* Food List */}
+        <div
+          className="mt-6 overflow-hidden rounded-2xl"
+          style={{ background: M.paper, border: `1px solid ${M.line}` }}
+        >
+          <div
+            className="flex items-center justify-between px-5 py-5 sm:px-8"
+            style={{ borderBottom: `1px solid ${M.line}` }}
+          >
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
-                <FiList size={21} />
+              <div
+                className="flex h-11 w-11 items-center justify-center rounded-xl"
+                style={{ background: M.brandTint, color: M.brand }}
+              >
+                <FiList size={20} />
               </div>
-
               <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Foods in This Category
-                </h2>
-                <p className="text-sm text-gray-500">
+                <h2 className="text-lg font-bold">Foods in this category</h2>
+                <p className="text-sm" style={{ color: M.inkSoft }}>
                   All dishes currently added under this category.
                 </p>
               </div>
             </div>
+
+            {!fetching && foods.length > 0 && (
+              <span
+                className="rq-mono rounded-full px-3 py-1 text-xs font-semibold"
+                style={{ background: M.brandTint, color: M.brand }}
+              >
+                {foods.length}
+              </span>
+            )}
           </div>
 
           <div className="p-5 sm:p-8">
             {fetching ? (
-              <p className="text-sm text-gray-400">Loading foods...</p>
-            ) : foods.length === 0 ? (
-              <p className="text-sm text-gray-400">
-                No food items added yet. Add your first one above.
+              <p className="text-sm" style={{ color: M.inkSoft }}>
+                Loading foods...
               </p>
+            ) : foods.length === 0 ? (
+              <div
+                className="rounded-xl px-5 py-10 text-center"
+                style={{ border: `1.5px dashed ${M.line}` }}
+              >
+                <p className="text-sm" style={{ color: M.inkSoft }}>
+                  No food items added yet. Add your first one above.
+                </p>
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {foods.map((food) => (
                   <div
                     key={food._id}
-                    className="flex gap-4 rounded-xl border border-gray-100 p-4 transition hover:border-orange-100 hover:bg-orange-50/30"
+                    className="rq-food-card flex gap-4 rounded-xl p-4"
+                    style={{ border: `1px solid ${M.line}` }}
                   >
-                    <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-orange-50 text-orange-500">
+                    <div
+                      className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg"
+                      style={{ background: M.brandTint, color: M.brand }}
+                    >
                       {food.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -377,14 +509,20 @@ function FoodsContent() {
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="truncate font-semibold text-gray-900">
+                        <h3 className="truncate text-sm font-bold">
                           {food.name}
                         </h3>
-                        <span className="whitespace-nowrap text-sm font-semibold text-orange-600">
-                          ${food.price.toFixed(2)}
+                        <span
+                          className="rq-mono whitespace-nowrap rounded-lg px-2 py-1 text-xs font-bold"
+                          style={{ background: M.brandTint, color: M.brand }}
+                        >
+                          ৳{food.price.toFixed(2)}
                         </span>
                       </div>
-                      <p className="mt-1 line-clamp-2 text-xs text-gray-500">
+                      <p
+                        className="mt-1 line-clamp-2 text-xs"
+                        style={{ color: M.inkSoft }}
+                      >
                         {food.description}
                       </p>
                     </div>
@@ -395,11 +533,13 @@ function FoodsContent() {
           </div>
         </div>
 
-        {/* Information */}
-        <div className="mt-6 rounded-2xl border border-orange-100 bg-orange-50 p-5">
-          <h3 className="font-semibold text-gray-900">Before you submit</h3>
-
-          <ul className="mt-3 space-y-2 text-sm text-gray-600">
+        {/* Info */}
+        <div
+          className="mt-6 rounded-2xl p-5"
+          style={{ background: M.brandTint, border: "1px solid #FFD9C4" }}
+        >
+          <h3 className="text-sm font-bold">Before you submit</h3>
+          <ul className="mt-3 space-y-1.5 text-sm" style={{ color: M.inkSoft }}>
             <li>• Food names must be unique within this category.</li>
             <li>• Price must be zero or higher.</li>
             <li>
