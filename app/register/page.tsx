@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import toast from "react-hot-toast";
 
-type Role = "customer" | "restaurant" | "rider";
+type Role = "customer" | "restaurant";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -176,7 +176,7 @@ export default function RegisterPage() {
                     I want to join as
                   </label>
 
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => setRole("customer")}
@@ -216,26 +216,6 @@ export default function RegisterPage() {
                         }`}
                       >
                         Restaurant
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setRole("rider")}
-                      className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-3.5 text-center transition ${
-                        role === "rider"
-                          ? "border-orange-500 bg-orange-50"
-                          : "border-gray-200 bg-white hover:border-gray-300"
-                      }`}
-                    >
-                      <span className="text-xl">🏍️</span>
-
-                      <span
-                        className={`text-sm font-semibold ${
-                          role === "rider" ? "text-orange-600" : "text-gray-600"
-                        }`}
-                      >
-                        Rider
                       </span>
                     </button>
                   </div>
