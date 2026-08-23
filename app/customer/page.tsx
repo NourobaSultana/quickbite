@@ -28,6 +28,59 @@ interface Restaurant {
   isActive: boolean;
 }
 
+// ================= VISUAL THEME (no DB fields needed) =================
+// Restaurants don't have cuisine/color fields in the schema, so we derive
+// a stable illustrated fallback (gradient + emoji) from the restaurant's
+// own id. Same restaurant always gets the same look; real `image` is
+// always preferred when present.
+
+const THEMES = [
+  { emoji: "🍛", gradient: "linear-gradient(135deg,#FF9A5A,#C2340A)" },
+  { emoji: "🍜", gradient: "linear-gradient(135deg,#FFC24B,#C2340A)" },
+  { emoji: "🍔", gradient: "linear-gradient(135deg,#FF7A45,#8A2110)" },
+  { emoji: "🍣", gradient: "linear-gradient(135deg,#FF8F6B,#B32A18)" },
+  { emoji: "🍚", gradient: "linear-gradient(135deg,#FFB74B,#B3280F)" },
+  { emoji: "🍰", gradient: "linear-gradient(135deg,#FFA66B,#9C2A17)" },
+];
+
+function themeFor(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++)
+    hash = (hash * 31 + id.charCodeAt(i)) >>> 0;
+  return THEMES[hash % THEMES.length];
+}
+
+const T = {
+  bg: "#FCFAF8",
+  paper: "#FFFFFF",
+  ink: "#17130F",
+  inkSoft: "rgba(23,19,15,0.58)",
+  line: "#EAE1D6",
+  brand: "#FF4E1F",
+  brandDark: "#C2340A",
+  brandTint: "#FFF0E9",
+  mint: "#0E7A5F",
+  mintTint: "#E9F5F0",
+  gold: "#E7A100",
+};
+
+function Perforation() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        height: 16,
+        marginTop: -8,
+        backgroundImage: `radial-gradient(circle, ${T.paper} 0 4.5px, transparent 5px)`,
+        backgroundSize: "16px 16px",
+        backgroundPosition: "center",
+        position: "relative",
+        zIndex: 1,
+      }}
+    />
+  );
+}
+
 export default function CustomerPage() {
   const router = useRouter();
   const { logout } = useAuth();
@@ -100,24 +153,48 @@ export default function CustomerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#fffaf5] text-gray-900">
+    <div className="min-h-screen" style={{ background: T.bg, color: T.ink }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .qb-display { font-family: 'Bricolage Grotesque', sans-serif; }
+        .qb-mono { font-family: 'IBM Plex Mono', monospace; }
+        .qb-card { transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s cubic-bezier(.22,1,.36,1); box-shadow: 0 1px 2px rgba(23,19,15,0.04); }
+        .qb-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -20px rgba(23,19,15,0.22); }
+        .qb-emoji { transition: transform .5s cubic-bezier(.22,1,.36,1); }
+        .qb-card:hover .qb-emoji { transform: scale(1.12) rotate(-4deg); }
+        .qb-img { transition: transform .5s cubic-bezier(.22,1,.36,1); }
+        .qb-card:hover .qb-img { transform: scale(1.06); }
+        .qb-arrow { transition: transform .3s; }
+        .qb-card:hover .qb-arrow { transform: translateX(3px); }
+        .qb-focus:focus-visible { outline: 2.5px solid ${T.brand}; outline-offset: 2px; }
+        @media (prefers-reduced-motion: reduce) {
+          .qb-card, .qb-emoji, .qb-img, .qb-arrow { transition: none !important; }
+          .qb-card:hover { transform: none !important; }
+        }
+      `}</style>
+
       {/* ========================================================= */}
       {/* HERO */}
       {/* ========================================================= */}
 
-      <section className="relative overflow-hidden bg-gradient-to-br from-orange-500 via-orange-500 to-orange-600">
-        {/* Decorative circles */}
+      <section
+        className="relative overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${T.brand}, ${T.brandDark})`,
+        }}
+      >
         <div className="absolute -right-20 -top-20 h-72 w-72 rounded-full bg-white/10" />
         <div className="absolute -bottom-32 -left-20 h-80 w-80 rounded-full bg-white/10" />
 
         <div className="relative mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
           <div className="max-w-3xl">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold text-white backdrop-blur">
+            <span className="qb-mono inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-white backdrop-blur">
               <span className="h-2 w-2 rounded-full bg-white" />
-              Discover delicious food near you
+              Now serving your area
             </span>
 
-            <h2 className="mt-5 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
+            <h2 className="qb-display mt-5 text-4xl font-extrabold leading-tight text-white sm:text-5xl lg:text-6xl">
               Good food.
               <br />
               Good mood.
@@ -132,7 +209,10 @@ export default function CustomerPage() {
 
             {/* Search */}
             <div className="mt-8 flex max-w-2xl items-center rounded-2xl bg-white p-2 shadow-xl">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
+              <div
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
+                style={{ background: T.brandTint, color: T.brand }}
+              >
                 <Search size={20} />
               </div>
 
@@ -141,10 +221,13 @@ export default function CustomerPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search restaurants, food or location..."
-                className="h-12 min-w-0 flex-1 bg-transparent px-4 text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                className="qb-focus h-12 min-w-0 flex-1 bg-transparent px-4 text-sm text-gray-700 outline-none placeholder:text-gray-400"
               />
 
-              <button className="hidden rounded-xl bg-orange-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 sm:block">
+              <button
+                className="hidden rounded-xl px-6 py-3 text-sm font-semibold text-white transition sm:block"
+                style={{ background: T.brand }}
+              >
                 Search
               </button>
             </div>
@@ -158,45 +241,57 @@ export default function CustomerPage() {
 
       <section className="mx-auto mt-7 max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-md">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-50 text-orange-500">
+          <div
+            className="flex items-center gap-4 rounded-2xl p-5 shadow-md"
+            style={{ background: T.paper, border: `1px solid ${T.line}` }}
+          >
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              style={{ background: T.brandTint, color: T.brand }}
+            >
               <Utensils size={21} />
             </div>
-
             <div>
-              <p className="text-2xl font-bold text-gray-900">
+              <p className="qb-mono text-2xl font-bold">
                 {approvedRestaurants.length}
               </p>
-
-              <p className="text-xs font-medium text-gray-500">
+              <p className="text-xs font-medium" style={{ color: T.inkSoft }}>
                 Approved Restaurants
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-md">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-50 text-green-600">
+          <div
+            className="flex items-center gap-4 rounded-2xl p-5 shadow-md"
+            style={{ background: T.paper, border: `1px solid ${T.line}` }}
+          >
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              style={{ background: T.mintTint, color: T.mint }}
+            >
               <Clock size={21} />
             </div>
-
             <div>
-              <p className="text-2xl font-bold text-gray-900">24/7</p>
-
-              <p className="text-xs font-medium text-gray-500">
+              <p className="qb-mono text-2xl font-bold">24/7</p>
+              <p className="text-xs font-medium" style={{ color: T.inkSoft }}>
                 Easy Food Discovery
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 rounded-2xl border border-gray-100 bg-white p-5 shadow-md">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-50 text-yellow-500">
+          <div
+            className="flex items-center gap-4 rounded-2xl p-5 shadow-md"
+            style={{ background: T.paper, border: `1px solid ${T.line}` }}
+          >
+            <div
+              className="flex h-12 w-12 items-center justify-center rounded-xl"
+              style={{ background: "#FFF7E0", color: T.gold }}
+            >
               <Star size={21} />
             </div>
-
             <div>
-              <p className="text-2xl font-bold text-gray-900">4.8</p>
-
-              <p className="text-xs font-medium text-gray-500">
+              <p className="qb-mono text-2xl font-bold">4.8</p>
+              <p className="text-xs font-medium" style={{ color: T.inkSoft }}>
                 Customer Experience
               </p>
             </div>
@@ -212,24 +307,34 @@ export default function CustomerPage() {
         id="restaurants"
         className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 lg:py-20"
       >
-        {/* Section Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-bold uppercase tracking-[0.18em] text-orange-500">
+            <p
+              className="qb-mono text-xs font-semibold uppercase tracking-[0.2em]"
+              style={{ color: T.brandDark }}
+            >
               Explore
             </p>
-
-            <h3 className="mt-2 text-3xl font-extrabold text-gray-900">
-              Restaurants for you
+            <h3 className="qb-display mt-2 text-3xl font-extrabold sm:text-4xl">
+              What are you craving?
             </h3>
-
-            <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">
+            <p
+              className="mt-2 max-w-xl text-sm leading-6"
+              style={{ color: T.inkSoft }}
+            >
               Browse restaurants that have been approved and are currently
               available on QuickBite.
             </p>
           </div>
 
-          <div className="rounded-full bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-600">
+          <div
+            className="qb-mono inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-xs font-semibold"
+            style={{ background: T.brandTint, color: T.brandDark }}
+          >
+            <span
+              className="h-1.5 w-1.5 rounded-full"
+              style={{ background: T.mint }}
+            />
             {filteredRestaurants.length} available
           </div>
         </div>
@@ -240,147 +345,177 @@ export default function CustomerPage() {
             {[1, 2, 3, 4, 5, 6].map((item) => (
               <div
                 key={item}
-                className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm"
+                className="overflow-hidden rounded-3xl"
+                style={{ border: `1px solid ${T.line}`, background: T.paper }}
               >
-                <div className="h-52 animate-pulse bg-gray-200" />
-
-                <div className="space-y-4 p-5">
-                  <div className="h-5 w-2/3 animate-pulse rounded bg-gray-200" />
-
-                  <div className="h-4 w-full animate-pulse rounded bg-gray-100" />
-
-                  <div className="h-4 w-4/5 animate-pulse rounded bg-gray-100" />
-
-                  <div className="h-10 w-full animate-pulse rounded-xl bg-gray-200" />
+                <div
+                  className="h-40 animate-pulse"
+                  style={{ background: T.line }}
+                />
+                <div className="space-y-3 p-5">
+                  <div
+                    className="h-3 w-1/3 animate-pulse rounded"
+                    style={{ background: T.line }}
+                  />
+                  <div
+                    className="h-5 w-2/3 animate-pulse rounded"
+                    style={{ background: T.line }}
+                  />
+                  <div
+                    className="h-4 w-full animate-pulse rounded"
+                    style={{ background: T.line }}
+                  />
+                  <div
+                    className="h-10 w-full animate-pulse rounded-xl"
+                    style={{ background: T.line }}
+                  />
                 </div>
               </div>
             ))}
           </div>
         ) : filteredRestaurants.length === 0 ? (
           /* Empty */
-          <div className="rounded-3xl border border-dashed border-orange-200 bg-white px-6 py-16 text-center">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-orange-50 text-4xl">
+          <div
+            className="rounded-3xl px-6 py-16 text-center"
+            style={{ border: `1.5px dashed ${T.line}`, background: T.paper }}
+          >
+            <div
+              className="mx-auto flex h-20 w-20 items-center justify-center rounded-full text-4xl"
+              style={{ background: T.brandTint }}
+            >
               🍽️
             </div>
-
-            <h4 className="mt-5 text-xl font-bold text-gray-900">
-              {search ? "No restaurants found" : "No restaurants available yet"}
-            </h4>
-
-            <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-gray-500">
+            <h4 className="qb-display mt-5 text-xl font-bold">
               {search
-                ? "Try searching with another restaurant name, food or location."
+                ? "Nothing matches that search"
+                : "No restaurants available yet"}
+            </h4>
+            <p
+              className="mx-auto mt-2 max-w-md text-sm leading-6"
+              style={{ color: T.inkSoft }}
+            >
+              {search
+                ? "Try a different name, cuisine, or area."
                 : "Once an admin approves a restaurant, it will appear here for customers."}
             </p>
-
             {search && (
               <button
                 onClick={() => setSearch("")}
-                className="mt-5 rounded-xl bg-orange-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+                className="qb-focus mt-5 rounded-xl px-5 py-3 text-sm font-semibold text-white transition"
+                style={{ background: T.brand }}
               >
                 Clear Search
               </button>
             )}
           </div>
         ) : (
-          /* Restaurant Grid */
+          /* Restaurant Grid — ticket/docket cards */
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredRestaurants.map((restaurant) => (
-              <article
-                key={restaurant._id}
-                className="group overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl"
-              >
-                {/* Image */}
-                <div className="relative h-52 overflow-hidden bg-orange-50">
-                  {restaurant.image ? (
-                    <img
-                      src={restaurant.image}
-                      alt={restaurant.name}
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
-                      <span className="text-6xl">🍴</span>
+            {filteredRestaurants.map((restaurant) => {
+              const theme = themeFor(restaurant._id);
+
+              return (
+                <article
+                  key={restaurant._id}
+                  className="qb-card group relative flex flex-col overflow-hidden rounded-3xl"
+                  style={{ background: T.paper, border: `1px solid ${T.line}` }}
+                >
+                  {/* Header tile: real image if present, else illustrated fallback */}
+                  <div
+                    className="relative flex h-40 items-center justify-center overflow-hidden"
+                    style={{ background: theme.gradient }}
+                  >
+                    {restaurant.image ? (
+                      <img
+                        src={restaurant.image}
+                        alt={restaurant.name}
+                        className="qb-img h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="qb-emoji select-none text-6xl">
+                        {theme.emoji}
+                      </span>
+                    )}
+
+                    <div className="absolute left-4 top-4">
+                      <span
+                        className="qb-mono inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-wider"
+                        style={{ background: T.mintTint, color: T.mint }}
+                      >
+                        <span
+                          className="h-1.5 w-1.5 rounded-full"
+                          style={{ background: T.mint }}
+                        />
+                        Open now
+                      </span>
                     </div>
-                  )}
 
-                  {/* Overlay */}
-                  <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
-
-                  {/* Open Badge */}
-                  <div className="absolute left-4 top-4">
-                    <span className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-bold text-green-600 shadow-md">
-                      <span className="h-2 w-2 rounded-full bg-green-500" />
-                      Open
-                    </span>
+                    <div
+                      className="qb-mono absolute right-4 top-4 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
+                      style={{
+                        background: "rgba(255,255,255,0.92)",
+                        color: T.ink,
+                      }}
+                    >
+                      <Star size={12} style={{ fill: T.gold, color: T.gold }} />
+                      4.8
+                    </div>
                   </div>
 
-                  {/* Rating */}
-                  <div className="absolute bottom-4 right-4 flex items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 text-xs font-bold text-gray-800 shadow-md">
-                    <Star
-                      size={13}
-                      className="fill-yellow-400 text-yellow-400"
-                    />
-                    4.8
-                  </div>
-                </div>
+                  <Perforation />
 
-                {/* Content */}
-                <div className="p-5">
-                  <div className="mb-4">
-                    <h4 className="text-xl font-bold text-gray-900 transition group-hover:text-orange-500">
+                  {/* Body */}
+                  <div className="flex flex-1 flex-col px-5 pb-5 pt-1">
+                    <h4 className="qb-display text-xl font-bold">
                       {restaurant.name}
                     </h4>
 
-                    <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-500">
+                    <p
+                      className="mt-2 line-clamp-2 text-sm leading-6"
+                      style={{ color: T.inkSoft }}
+                    >
                       {restaurant.description ||
                         "Delicious food and great service waiting for you."}
                     </p>
-                  </div>
 
-                  {/* Info */}
-                  <div className="space-y-3 border-t border-gray-100 pt-4">
-                    {restaurant.address && (
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-500">
-                          <MapPin size={15} />
-                        </div>
-
-                        <p className="pt-1 text-xs font-medium leading-5 text-gray-600">
+                    <div
+                      className="qb-mono mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs"
+                      style={{ color: T.inkSoft }}
+                    >
+                      {restaurant.address && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <MapPin size={13} style={{ color: T.brand }} />
                           {restaurant.address}
-                        </p>
-                      </div>
-                    )}
-
-                    {restaurant.phone && (
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-50 text-orange-500">
-                          <Phone size={15} />
-                        </div>
-
-                        <p className="text-xs font-medium text-gray-600">
+                        </span>
+                      )}
+                      {restaurant.phone && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <Phone size={13} style={{ color: T.brand }} />
                           {restaurant.phone}
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                        </span>
+                      )}
+                    </div>
 
-                  {/* Button */}
-                  <button
-                    onClick={() =>
-                      router.push(`/customer/restaurants/${restaurant._id}`)
-                    }
-                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3.5 text-sm font-bold text-white shadow-sm transition hover:bg-orange-600 hover:shadow-md"
-                  >
-                    Explore Restaurant
-                    <ChevronRight
-                      size={17}
-                      className="transition group-hover:translate-x-1"
-                    />
-                  </button>
-                </div>
-              </article>
-            ))}
+                    {/* Tear-off stub CTA */}
+                    <button
+                      onClick={() =>
+                        router.push(`/customer/restaurants/${restaurant._id}`)
+                      }
+                      className="qb-focus mt-5 flex items-center justify-between rounded-xl border-0 bg-transparent pt-4 text-sm font-semibold"
+                      style={{ borderTop: `1.5px dashed ${T.line}` }}
+                    >
+                      View menu
+                      <span
+                        className="qb-arrow flex h-8 w-8 items-center justify-center rounded-full text-white"
+                        style={{ background: T.brand }}
+                      >
+                        <ChevronRight size={16} />
+                      </span>
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
         )}
       </section>
@@ -389,19 +524,17 @@ export default function CustomerPage() {
       {/* FOOTER */}
       {/* ========================================================= */}
 
-      <footer className="border-t border-orange-100 bg-white">
+      <footer style={{ borderTop: `1px solid ${T.line}`, background: T.paper }}>
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
           <div>
-            <h2 className="text-lg font-extrabold text-gray-900">
-              Quick<span className="text-orange-500">Bite</span>
+            <h2 className="qb-display text-lg font-extrabold">
+              Quick<span style={{ color: T.brand }}>Bite</span>
             </h2>
-
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs" style={{ color: T.inkSoft }}>
               Your favorite food, just a bite away.
             </p>
           </div>
-
-          <p className="text-xs text-gray-400">
+          <p className="qb-mono text-xs" style={{ color: T.inkSoft }}>
             © {new Date().getFullYear()} QuickBite. All rights reserved.
           </p>
         </div>
