@@ -13,8 +13,9 @@ interface User {
   name: string;
   email: string;
   phone: string;
-  role: "customer" | "restaurant" | "admin";
+  role: "customer" | "restaurant" | "admin" | "rider";
   status: "active" | "blocked";
+  riderId?: string | null;
 }
 
 interface AuthContextType {

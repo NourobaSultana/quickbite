@@ -8,7 +8,7 @@ if (!JWT_SECRET) {
 
 export interface JwtPayload {
   userId: string;
-  role: "customer" | "restaurant" | "admin";
+  role: "customer" | "restaurant" | "admin" | "rider";
 }
 
 export const createToken = (payload: JwtPayload) => {

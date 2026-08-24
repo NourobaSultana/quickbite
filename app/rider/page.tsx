@@ -36,12 +36,6 @@ interface OrderItem {
   quantity: number;
 }
 
-interface Customer {
-  _id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-}
 interface Order {
   _id: string;
   riderId?: Rider | string | null;
@@ -104,9 +98,16 @@ const statusConfig = {
   },
 };
 
+function getRiderId(riderField: Order["riderId"]) {
+  if (!riderField) return null;
+  return typeof riderField === "object" ? riderField._id : riderField;
+}
+
 function RiderContent() {
   const searchParams = useSearchParams();
 
+  // riderId is now OPTIONAL — only used to personalize the header/stats.
+  // The order list itself always shows every order.
   const riderId = searchParams.get("riderId");
 
   const [rider, setRider] = useState<Rider | null>(null);
@@ -115,25 +116,24 @@ function RiderContent() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
-  const fetchRiderData = useCallback(async () => {
-    if (!riderId) {
-      setLoading(false);
-      setError("Rider ID is missing.");
-      return;
-    }
-
+  const fetchData = useCallback(async () => {
     try {
       setError("");
 
-      const [ordersResponse, riderResponse] = await Promise.all([
-        fetch(`/api/orders?riderId=${riderId}`, {
-          credentials: "include",
-        }),
+      // Always fetch ALL orders — no riderId filter.
+      const requests: Promise<Response>[] = [
+        fetch(`/api/orders`, { credentials: "include" }),
+      ];
 
-        fetch(`/api/riders/${riderId}`, {
-          credentials: "include",
-        }),
-      ]);
+      if (riderId) {
+        requests.push(
+          fetch(`/api/riders/${riderId}`, { credentials: "include" }),
+        );
+      }
+
+      const responses = await Promise.all(requests);
+      const ordersResponse = responses[0];
+      const riderResponse = responses[1];
 
       const ordersData = await ordersResponse.json();
 
@@ -143,15 +143,14 @@ function RiderContent() {
         setError(ordersData.message || "Failed to load orders.");
       }
 
-      if (riderResponse.ok) {
+      if (riderResponse && riderResponse.ok) {
         const riderData = await riderResponse.json();
-
         if (riderData.success) {
           setRider(riderData.rider);
         }
       }
-    } catch (error) {
-      console.error("Rider dashboard error:", error);
+    } catch (err) {
+      console.error("Rider dashboard error:", err);
       setError("Unable to load rider dashboard.");
     } finally {
       setLoading(false);
@@ -160,24 +159,22 @@ function RiderContent() {
   }, [riderId]);
 
   useEffect(() => {
-    fetchRiderData();
-  }, [fetchRiderData]);
+    fetchData();
+  }, [fetchData]);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchRiderData();
+    fetchData();
   };
 
+  // Stats are computed across ALL orders shown in the list.
   const stats = useMemo(() => {
     return {
       total: orders.length,
-
       pending: orders.filter((order) => order.status === "pending").length,
-
       active: orders.filter((order) =>
         ["accepted", "picked_up", "on_the_way"].includes(order.status),
       ).length,
-
       delivered: orders.filter((order) => order.status === "delivered").length,
     };
   }, [orders]);
@@ -201,28 +198,6 @@ function RiderContent() {
     );
   }
 
-  if (!riderId) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-gray-100">
-          <FiAlertCircle className="mx-auto text-red-500" size={42} />
-
-          <h1 className="mt-4 text-xl font-bold text-gray-900">
-            Rider ID Required
-          </h1>
-
-          <p className="mt-2 text-sm text-gray-500">
-            Please open the rider dashboard with a valid rider ID.
-          </p>
-
-          <p className="mt-4 rounded-lg bg-gray-50 p-3 text-xs text-gray-500">
-            /rider?riderId=YOUR_RIDER_ID
-          </p>
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
@@ -238,7 +213,7 @@ function RiderContent() {
             </h1>
 
             <p className="mt-2 text-sm text-gray-500">
-              Manage your assigned deliveries and keep track of your orders.
+              All current orders in the system.
             </p>
           </div>
 
@@ -255,7 +230,7 @@ function RiderContent() {
           </button>
         </div>
 
-        {/* Rider Information */}
+        {/* Rider Information (only shown if a valid riderId was passed) */}
         {rider && (
           <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -345,12 +320,10 @@ function RiderContent() {
         <div className="mt-8">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                Assigned Orders
-              </h2>
+              <h2 className="text-xl font-bold text-gray-900">All Orders</h2>
 
               <p className="mt-1 text-sm text-gray-500">
-                Orders currently assigned to you.
+                Every order currently in the system.
               </p>
             </div>
           </div>
@@ -360,11 +333,11 @@ function RiderContent() {
               <FiPackage size={42} className="mx-auto text-gray-300" />
 
               <h3 className="mt-4 font-semibold text-gray-900">
-                No assigned orders
+                No orders yet
               </h3>
 
               <p className="mt-1 text-sm text-gray-500">
-                New orders assigned to you will appear here.
+                New orders will appear here as customers place them.
               </p>
             </div>
           ) : (
@@ -376,6 +349,9 @@ function RiderContent() {
                   typeof order.restaurantId === "object"
                     ? order.restaurantId
                     : null;
+
+                const orderRiderId = getRiderId(order.riderId);
+                const isMine = riderId && orderRiderId === riderId;
 
                 return (
                   <div
@@ -395,6 +371,18 @@ function RiderContent() {
                           >
                             {status.label}
                           </span>
+
+                          {isMine && (
+                            <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700">
+                              Assigned to you
+                            </span>
+                          )}
+
+                          {!orderRiderId && (
+                            <span className="rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 text-xs font-semibold text-gray-500">
+                              Unassigned
+                            </span>
+                          )}
                         </div>
 
                         <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">

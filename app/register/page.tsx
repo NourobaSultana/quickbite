@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import toast from "react-hot-toast";
 
-type Role = "customer" | "restaurant";
+type Role = "customer" | "restaurant" | "rider";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -15,6 +15,7 @@ export default function RegisterPage() {
     email: "",
     phone: "",
     password: "",
+    vehicle: "",
   });
 
   const [role, setRole] = useState<Role>("customer");
@@ -60,6 +61,13 @@ export default function RegisterPage() {
       setLoading(false);
     }
   };
+
+  const roleLabel =
+    role === "restaurant"
+      ? "Restaurant"
+      : role === "rider"
+        ? "Rider"
+        : "Customer";
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -176,11 +184,11 @@ export default function RegisterPage() {
                     I want to join as
                   </label>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <button
                       type="button"
                       onClick={() => setRole("customer")}
-                      className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-3.5 text-center transition ${
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3.5 text-center transition ${
                         role === "customer"
                           ? "border-orange-500 bg-orange-50"
                           : "border-gray-200 bg-white hover:border-gray-300"
@@ -201,7 +209,7 @@ export default function RegisterPage() {
                     <button
                       type="button"
                       onClick={() => setRole("restaurant")}
-                      className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-4 py-3.5 text-center transition ${
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3.5 text-center transition ${
                         role === "restaurant"
                           ? "border-orange-500 bg-orange-50"
                           : "border-gray-200 bg-white hover:border-gray-300"
@@ -216,6 +224,25 @@ export default function RegisterPage() {
                         }`}
                       >
                         Restaurant
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setRole("rider")}
+                      className={`flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3.5 text-center transition ${
+                        role === "rider"
+                          ? "border-orange-500 bg-orange-50"
+                          : "border-gray-200 bg-white hover:border-gray-300"
+                      }`}
+                    >
+                      <span className="text-xl">🏍️</span>
+                      <span
+                        className={`text-sm font-semibold ${
+                          role === "rider" ? "text-orange-600" : "text-gray-600"
+                        }`}
+                      >
+                        Rider
                       </span>
                     </button>
                   </div>
@@ -284,6 +311,35 @@ export default function RegisterPage() {
                   />
                 </div>
 
+                {/* Vehicle — only for riders */}
+                {role === "rider" && (
+                  <div>
+                    <label
+                      htmlFor="vehicle"
+                      className="mb-2 block text-sm font-medium text-gray-700"
+                    >
+                      Vehicle
+                    </label>
+
+                    <select
+                      id="vehicle"
+                      name="vehicle"
+                      value={formData.vehicle}
+                      onChange={(e) =>
+                        setFormData({ ...formData, vehicle: e.target.value })
+                      }
+                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+                    >
+                      <option value="">
+                        Select vehicle (default: Motorcycle)
+                      </option>
+                      <option value="Motorcycle">Motorcycle</option>
+                      <option value="Bicycle">Bicycle</option>
+                      <option value="Car">Car</option>
+                    </select>
+                  </div>
+                )}
+
                 {/* Password */}
                 <div>
                   <label
@@ -336,7 +392,7 @@ export default function RegisterPage() {
                 >
                   {loading
                     ? "Creating Account..."
-                    : `Create ${role === "restaurant" ? "Restaurant" : "Customer"} Account`}
+                    : `Create ${roleLabel} Account`}
                 </button>
               </form>
 

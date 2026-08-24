@@ -90,6 +90,7 @@ export async function POST(request: NextRequest) {
           phone: user.phone,
           role: user.role,
           status: user.status,
+          riderId: user.riderId || null, // frontend uses this to redirect riders
         },
       },
       { status: 200 },

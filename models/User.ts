@@ -1,12 +1,13 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 
 export interface IUser extends Document {
   name: string;
   email: string;
   phone: string;
   password: string;
-  role: "customer" | "restaurant" | "admin";
+  role: "customer" | "restaurant" | "admin" | "rider";
   status: "active" | "blocked";
+  riderId?: Types.ObjectId | null; // links to Rider doc, only set when role === "rider"
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,7 +43,7 @@ const userSchema = new Schema<IUser>(
 
     role: {
       type: String,
-      enum: ["customer", "restaurant", "admin"],
+      enum: ["customer", "restaurant", "admin", "rider"],
       default: "customer",
     },
 
@@ -50,6 +51,12 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: ["active", "blocked"],
       default: "active",
+    },
+
+    riderId: {
+      type: Schema.Types.ObjectId,
+      ref: "Rider",
+      default: null,
     },
   },
   {

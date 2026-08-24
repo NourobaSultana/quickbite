@@ -27,6 +27,7 @@ interface RiderInfo {
 
 interface Order {
   _id: string;
+  customerId: string;
   items: OrderItem[];
   totalAmount: number;
   customerName: string;
@@ -52,6 +53,8 @@ export default function RiderOrderPage() {
   const [updating, setUpdating] = useState(false);
   const [sharingLocation, setSharingLocation] = useState(false);
   const [locationError, setLocationError] = useState("");
+  const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
 
   const watchIdRef = useRef<number | null>(null);
 
@@ -74,6 +77,30 @@ export default function RiderOrderPage() {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
+
+  useEffect(() => {
+    const customerId = order?.customerId;
+    if (!customerId) return;
+
+    const fetchCustomerOrders = async () => {
+      setLoadingHistory(true);
+      try {
+        const res = await fetch(`/api/orders?customerId=${customerId}`);
+        const data = await res.json();
+        if (data.success) {
+          setCustomerOrders(
+            data.orders.filter((o: Order) => o._id !== order._id),
+          );
+        }
+      } catch (err) {
+        console.error("Failed to fetch customer orders:", err);
+      } finally {
+        setLoadingHistory(false);
+      }
+    };
+
+    fetchCustomerOrders();
+  }, [order?.customerId, order?._id]);
 
   // Start sharing GPS location once we know the rider's id.
   useEffect(() => {
@@ -330,6 +357,40 @@ export default function RiderOrderPage() {
             </button>
           ) : null}
         </div>
+
+        {(customerOrders.length > 0 || loadingHistory) && (
+          <div className="mt-6 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-100">
+            <div className="mb-4 flex items-center gap-2 text-sm font-bold text-gray-900">
+              <ClipboardList size={16} className="text-orange-500" />
+              {order.customerName}&apos;s Order History
+            </div>
+
+            {loadingHistory ? (
+              <p className="text-center text-xs text-gray-400">Loading...</p>
+            ) : (
+              <div className="space-y-3">
+                {customerOrders.map((o) => (
+                  <div
+                    key={o._id}
+                    className="flex items-center justify-between rounded-xl border border-gray-100 px-4 py-3 text-sm"
+                  >
+                    <div>
+                      <p className="font-semibold text-gray-800">
+                        #{o._id.slice(-6).toUpperCase()}
+                      </p>
+                      <p className="text-xs capitalize text-gray-500">
+                        {o.status.replace("_", " ")}
+                      </p>
+                    </div>
+                    <span className="font-bold text-orange-500">
+                      ৳{o.totalAmount}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -88,6 +88,7 @@ export async function GET(request: NextRequest) {
 
     const restaurantId = searchParams.get("restaurantId");
     const riderId = searchParams.get("riderId");
+    const customerId = searchParams.get("customerId");
 
     const filter: Record<string, unknown> = {};
 
@@ -99,6 +100,10 @@ export async function GET(request: NextRequest) {
     // Rider-wise orders
     if (riderId) {
       filter.riderId = riderId;
+    }
+    // Customer-wise orders
+    if (customerId) {
+      filter.customerId = customerId;
     }
 
     const orders = await Order.find(filter)

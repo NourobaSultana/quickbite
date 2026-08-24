@@ -41,11 +41,18 @@ export default function LoginPage() {
         toast.error(data.message || "Login failed");
         return;
       }
+
       toast.success("Login successful!");
 
       await refreshUser();
 
-      router.push("/dashboard");
+      // Route based on role — riders go to their dashboard with their riderId,
+      // everyone else goes to the normal dashboard.
+      if (data.user.role === "rider" && data.user.riderId) {
+        router.push(`/rider?riderId=${data.user.riderId}`);
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error(error);
       setError("Something went wrong");

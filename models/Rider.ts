@@ -1,4 +1,4 @@
-import mongoose, { Document, Model, Schema } from "mongoose";
+import mongoose, { Document, Model, Schema, Types } from "mongoose";
 
 export interface IRiderLocation {
   lat: number;
@@ -7,6 +7,7 @@ export interface IRiderLocation {
 }
 
 export interface IRider extends Document {
+  userId: Types.ObjectId; // links back to the User account (role: "rider")
   name: string;
   phone: string;
   vehicle?: string;
@@ -27,6 +28,13 @@ const riderLocationSchema = new Schema<IRiderLocation>(
 
 const riderSchema = new Schema<IRider>(
   {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
+
     name: {
       type: String,
       required: true,

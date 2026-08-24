@@ -3,12 +3,13 @@ import bcrypt from "bcryptjs";
 
 import dbConnect from "@/lib/dbConnect";
 import User from "@/models/User";
+import Rider from "@/models/Rider";
 
 // Only these roles can be self-selected during public registration.
 // "admin" is intentionally excluded — admin accounts should be created
 // separately (e.g. by an existing admin, or seeded directly in the DB),
 // never through a public sign-up form.
-const ALLOWED_SELF_REGISTER_ROLES = ["customer", "restaurant"];
+const ALLOWED_SELF_REGISTER_ROLES = ["customer", "restaurant", "rider"];
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
 
-    const { name, email, phone, password, role } = body;
+    const { name, email, phone, password, role, vehicle } = body;
 
     // 1. Check required fields
     if (!name || !email || !phone || !password) {
@@ -80,7 +81,21 @@ export async function POST(request: NextRequest) {
       role: requestedRole,
     });
 
-    // 7. Return response
+    // 7. If registering as a rider, also create the linked Rider profile
+    // (holds vehicle, availability, live location — used by the rider dashboard)
+    if (requestedRole === "rider") {
+      const rider = await Rider.create({
+        userId: user._id,
+        name,
+        phone,
+        vehicle: vehicle || "Motorcycle",
+      });
+
+      user.riderId = rider._id;
+      await user.save();
+    }
+
+    // 8. Return response
     return NextResponse.json(
       {
         success: true,
@@ -92,6 +107,7 @@ export async function POST(request: NextRequest) {
           phone: user.phone,
           role: user.role,
           status: user.status,
+          riderId: user.riderId || null,
         },
       },
       { status: 201 },
